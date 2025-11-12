@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT' // 依赖Paper API
+    compileOnly 'io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT' // 依赖Paper API
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
 
