@@ -2,9 +2,18 @@ package io.github.kaleidscoper.abysscurse;
 
 import io.github.kaleidscoper.abysscurse.command.CommandHandler;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
+import io.github.kaleidscoper.abysscurse.curse.CurseManager;
+import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.debug.DebugManager;
+import io.github.kaleidscoper.abysscurse.effect.EffectManager;
+import io.github.kaleidscoper.abysscurse.effect.LayerEffectManager;
+import io.github.kaleidscoper.abysscurse.filter.FilterManager;
 import io.github.kaleidscoper.abysscurse.mode.ModeManager;
+import io.github.kaleidscoper.abysscurse.region.RegionManager;
+import io.github.kaleidscoper.abysscurse.sound.SoundManager;
+import io.github.kaleidscoper.abysscurse.visual.VisualManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 /**
  * AbyssCurse 插件主类
@@ -14,8 +23,19 @@ public final class AbyssCursePlugin extends JavaPlugin {
 
     private ConfigManager configManager;
     private ModeManager modeManager;
+    private RegionManager regionManager;
+    private PlayerDataManager playerDataManager;
+    private EffectManager effectManager;
+    private LayerEffectManager layerEffectManager;
+    private CurseManager curseManager;
+    private FilterManager filterManager;
+    private SoundManager soundManager;
+    private VisualManager visualManager;
     private CommandHandler commandHandler;
     private DebugManager debugManager;
+    
+    // 定期自动保存任务
+    private BukkitTask autoSaveTask;
 
     @Override
     public void onEnable() {
@@ -30,8 +50,44 @@ public final class AbyssCursePlugin extends JavaPlugin {
             modeManager = new ModeManager(this, configManager);
             getLogger().info("模式管理器已初始化，当前模式: " + modeManager.getCurrentMode().name());
 
+            // 初始化区域管理器
+            regionManager = new RegionManager(this, configManager, modeManager);
+            getLogger().info("区域管理器已初始化");
+
+            // 初始化玩家数据管理器
+            playerDataManager = new PlayerDataManager(this);
+            getLogger().info("玩家数据管理器已初始化");
+
+            // 初始化效果管理器
+            effectManager = new EffectManager(this, playerDataManager);
+            getLogger().info("效果管理器已初始化");
+            
+            // 初始化层级效果管理器
+            layerEffectManager = new LayerEffectManager(this, playerDataManager, effectManager);
+            layerEffectManager.setVisualManager(visualManager);
+            getLogger().info("层级效果管理器已初始化");
+            
+            // 初始化诅咒管理器
+            curseManager = new CurseManager(this, playerDataManager, regionManager);
+            curseManager.setEffectHandler(effectManager);
+            curseManager.setFilterManager(filterManager);
+            curseManager.setSoundManager(soundManager);
+            getLogger().info("诅咒管理器已初始化");
+            
+            // 初始化滤镜管理器
+            filterManager = new FilterManager(this, playerDataManager);
+            getLogger().info("滤镜管理器已初始化");
+            
+            // 初始化音效管理器
+            soundManager = new SoundManager(this);
+            getLogger().info("音效管理器已初始化");
+            
+            // 初始化视觉管理器
+            visualManager = new VisualManager(this);
+            getLogger().info("视觉管理器已初始化");
+
             // 初始化调试管理器
-            debugManager = new DebugManager(this, configManager, modeManager);
+            debugManager = new DebugManager(this, configManager, modeManager, regionManager, playerDataManager);
             getLogger().info("调试管理器已初始化");
 
             // 初始化命令处理器
@@ -41,8 +97,14 @@ public final class AbyssCursePlugin extends JavaPlugin {
             getLogger().info("命令处理器已注册");
 
             // 注册事件监听器
-            getServer().getPluginManager().registerEvents(new AbyssCurseListener(), this);
+            getServer().getPluginManager().registerEvents(new AbyssCurseListener(this), this);
             getLogger().info("事件监听器已注册");
+            
+            // 启动定期自动保存任务（每5分钟保存一次）
+            autoSaveTask = getServer().getScheduler().runTaskTimer(this, () -> {
+                playerDataManager.autoSave();
+            }, 6000, 6000); // 6000 tick = 5分钟
+            getLogger().info("自动保存任务已启动");
 
             // 启动调试管理器（如果全局调试开启）
             if (configManager.isDebugEnabled()) {
@@ -62,7 +124,29 @@ public final class AbyssCursePlugin extends JavaPlugin {
     public void onDisable() {
         getLogger().info("正在卸载 AbyssCurse 插件...");
 
-        // 停止调试管理器
+        // 停止自动保存任务
+        if (autoSaveTask != null && !autoSaveTask.isCancelled()) {
+            autoSaveTask.cancel();
+        }
+
+        // 保存所有玩家数据
+        if (playerDataManager != null) {
+            playerDataManager.saveAllPlayerData();
+        }
+
+        // 停止所有管理器
+        if (effectManager != null) {
+            effectManager.stop();
+        }
+        if (layerEffectManager != null) {
+            layerEffectManager.stop();
+        }
+        if (filterManager != null) {
+            filterManager.stop();
+        }
+        if (visualManager != null) {
+            visualManager.stop();
+        }
         if (debugManager != null) {
             debugManager.stop();
         }
@@ -97,9 +181,58 @@ public final class AbyssCursePlugin extends JavaPlugin {
     }
 
     /**
+     * 获取区域管理器
+     */
+    public RegionManager getRegionManager() {
+        return regionManager;
+    }
+
+    /**
+     * 获取玩家数据管理器
+     */
+    public PlayerDataManager getPlayerDataManager() {
+        return playerDataManager;
+    }
+
+    /**
      * 获取调试管理器
      */
     public DebugManager getDebugManager() {
         return debugManager;
+    }
+    
+    /**
+     * 获取诅咒管理器
+     */
+    public CurseManager getCurseManager() {
+        return curseManager;
+    }
+    
+    /**
+     * 获取效果管理器
+     */
+    public EffectManager getEffectManager() {
+        return effectManager;
+    }
+    
+    /**
+     * 获取滤镜管理器
+     */
+    public FilterManager getFilterManager() {
+        return filterManager;
+    }
+    
+    /**
+     * 获取音效管理器
+     */
+    public SoundManager getSoundManager() {
+        return soundManager;
+    }
+    
+    /**
+     * 获取视觉管理器
+     */
+    public VisualManager getVisualManager() {
+        return visualManager;
     }
 }

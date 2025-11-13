@@ -1,7 +1,10 @@
 package io.github.kaleidscoper.abysscurse.debug;
 
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
+import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
+import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.mode.ModeManager;
+import io.github.kaleidscoper.abysscurse.region.RegionManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -21,6 +24,8 @@ public class DebugManager {
     private final JavaPlugin plugin;
     private final ConfigManager configManager;
     private final ModeManager modeManager;
+    private final RegionManager regionManager;
+    private final PlayerDataManager playerDataManager;
     
     // 玩家级别的调试开关
     private final Set<UUID> debugPlayers = new HashSet<>();
@@ -28,10 +33,13 @@ public class DebugManager {
     // 定时任务
     private BukkitTask debugTask;
     
-    public DebugManager(JavaPlugin plugin, ConfigManager configManager, ModeManager modeManager) {
+    public DebugManager(JavaPlugin plugin, ConfigManager configManager, ModeManager modeManager,
+                       RegionManager regionManager, PlayerDataManager playerDataManager) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.modeManager = modeManager;
+        this.regionManager = regionManager;
+        this.playerDataManager = playerDataManager;
     }
     
     /**
@@ -127,13 +135,53 @@ public class DebugManager {
                 NamedTextColor.GREEN));
         }
         
-        // TODO: 当 PlayerDataManager 实现后，添加以下信息：
-        // - 当前层级
-        // - 累计上升高度
-        // - 安全高度
-        // - 是否在 abyss 内（需要 RegionManager）
-        // - 是否在豁免区内（需要 RegionManager）
-        // - 是否为生骸（需要 PlayerDataManager）
+        // 获取玩家数据
+        PlayerCurseData data = playerDataManager.getData(player);
+        if (data != null) {
+            builder.append(Component.text(" | ", NamedTextColor.GRAY));
+            
+            // 累计上升高度
+            int totalRise = data.getTotalRise();
+            builder.append(Component.text("上升: ", NamedTextColor.GRAY));
+            builder.append(Component.text(String.valueOf(totalRise), 
+                totalRise >= 2 ? NamedTextColor.RED : NamedTextColor.YELLOW));
+            
+            // 安全高度
+            builder.append(Component.text(" | ", NamedTextColor.GRAY));
+            builder.append(Component.text("安全高度: ", NamedTextColor.GRAY));
+            builder.append(Component.text(String.format("%.1f", data.getSafeHeight()), NamedTextColor.AQUA));
+            
+            // 当前层级
+            int layer = data.getCurrentLayer();
+            if (layer > 0) {
+                builder.append(Component.text(" | ", NamedTextColor.GRAY));
+                builder.append(Component.text("层级: ", NamedTextColor.GRAY));
+                builder.append(Component.text(String.valueOf(layer), NamedTextColor.RED));
+            }
+        }
+        
+        // 区域信息
+        if (regionManager != null) {
+            builder.append(Component.text(" | ", NamedTextColor.GRAY));
+            boolean inAbyss = regionManager.isInAbyss(player.getLocation());
+            builder.append(Component.text("Abyss: ", NamedTextColor.GRAY));
+            builder.append(Component.text(inAbyss ? "是" : "否", 
+                inAbyss ? NamedTextColor.RED : NamedTextColor.GREEN));
+            
+            boolean inExemption = regionManager.isInExemptionZone(player.getLocation());
+            if (inExemption) {
+                builder.append(Component.text(" | ", NamedTextColor.GRAY));
+                builder.append(Component.text("豁免区: ", NamedTextColor.GRAY));
+                builder.append(Component.text("是", NamedTextColor.GREEN));
+            }
+            
+            boolean isExempt = regionManager.isExemptPlayer(player.getUniqueId());
+            if (isExempt) {
+                builder.append(Component.text(" | ", NamedTextColor.GRAY));
+                builder.append(Component.text("豁免者: ", NamedTextColor.GRAY));
+                builder.append(Component.text("是", NamedTextColor.GOLD));
+            }
+        }
         
         return builder.build();
     }
@@ -221,13 +269,29 @@ public class DebugManager {
         info.append("§7全局调试: §e").append(configManager.isDebugEnabled() ? "开启" : "关闭").append("\n");
         info.append("§7玩家调试: §e").append(isPlayerDebugEnabled(player) ? "开启" : "关闭").append("\n");
         
-        // TODO: 当相关模块实现后，添加以下信息
-        info.append("§7当前层级: §c未实现\n");
-        info.append("§7累计上升高度: §c未实现\n");
-        info.append("§7安全高度: §c未实现\n");
-        info.append("§7是否在Abyss内: §c未实现\n");
-        info.append("§7是否在豁免区: §c未实现\n");
-        info.append("§7是否为生骸: §c未实现\n");
+        // 玩家数据信息
+        PlayerCurseData data = playerDataManager.getData(player);
+        if (data != null) {
+            info.append("§7当前层级: §e").append(data.getCurrentLayer() > 0 ? String.valueOf(data.getCurrentLayer()) : "无").append("\n");
+            info.append("§7累计上升高度: §e").append(data.getTotalRise()).append(" 格\n");
+            info.append("§7安全高度: §e").append(String.format("%.2f", data.getSafeHeight())).append("\n");
+            info.append("§7是否为生骸: §e").append(data.isNarehate() ? "是" : "否").append("\n");
+            if (data.isNarehate() && data.getNarehateType() != null) {
+                info.append("§7生骸类型: §e").append(data.getNarehateType().name()).append("\n");
+            }
+        }
+        
+        // 区域信息
+        if (regionManager != null) {
+            info.append("§7是否在Abyss内: §e").append(regionManager.isInAbyss(player.getLocation()) ? "是" : "否").append("\n");
+            info.append("§7是否在豁免区: §e").append(regionManager.isInExemptionZone(player.getLocation()) ? "是" : "否").append("\n");
+            info.append("§7是否为豁免者: §e").append(regionManager.isExemptPlayer(player.getUniqueId()) ? "是" : "否").append("\n");
+            
+            int armOfCurse = regionManager.getArmOfCurse(player.getLocation());
+            if (armOfCurse != Integer.MAX_VALUE) {
+                info.append("§7诅咒臂: §e").append(armOfCurse).append(" 区块\n");
+            }
+        }
         
         info.append("§7==============================");
         return info.toString();
