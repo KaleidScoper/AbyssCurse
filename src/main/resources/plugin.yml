@@ -4,3 +4,19 @@ main: io.github.kaleidscoper.abysscurse.AbyssCursePlugin
 api-version: 1.21
 author: KaleidScoper
 description: AbyssCurse is a plugin that adds a curse to the game.
+
+commands:
+  abysscurse:
+    description: AbyssCurse 插件主命令
+    usage: /<command> [subcommand]
+    aliases: [ac, abyss]
+
+permissions:
+  abysscurse.admin:
+    description: 允许使用管理员命令（模式切换、重载等）
+    default: op
+  abysscurse.*:
+    description: 所有 AbyssCurse 权限
+    default: op
+    children:
+      abysscurse.admin: true

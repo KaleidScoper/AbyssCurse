@@ -1,0 +1,24 @@
+# AbyssCurse 插件配置文件
+
+# 插件模式: OFF, ABYSS, WORLD
+# OFF: 关闭模式，插件不对任何玩家施加诅咒
+# ABYSS: 区域开启模式，仅在定义的 abyss 区域内施加诅咒
+# WORLD: 全部开启模式，整个主世界都被视为 abyss
+mode: OFF
+
+# Abyss 区域配置（仅在 ABYSS 模式下生效）
+abyss:
+  center:
+    x: 0
+    y: 64
+    z: 0
+  # 半径（切比雪夫距离，单位：区块）
+  radius: 5
+
+# 诅咒模式: abyss-curse, decompression-sickness
+curse-mode: abyss-curse
+
+# 调试配置
+debug:
+  enabled: false
+
