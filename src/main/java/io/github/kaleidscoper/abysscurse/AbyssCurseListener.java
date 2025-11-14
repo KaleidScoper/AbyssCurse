@@ -7,6 +7,7 @@ import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.mode.ModeManager;
 import io.github.kaleidscoper.abysscurse.mode.PluginMode;
 import io.github.kaleidscoper.abysscurse.region.RegionManager;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -129,6 +130,13 @@ public class AbyssCurseListener implements Listener {
         PlayerCurseData data = playerDataManager.getData(player);
         if (data == null) {
             return;
+        }
+        
+        // 检查玩家是否死于诅咒（当前诅咒层级 > 0）
+        if (data.getCurrentLayer() > 0) {
+            // 设置自定义死亡消息
+            Component deathMessage = Component.text(player.getName() + "魂归奈落");
+            event.deathMessage(deathMessage);
         }
         
         // 清空累计上升记录
