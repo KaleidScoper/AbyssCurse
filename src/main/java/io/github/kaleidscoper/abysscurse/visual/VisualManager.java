@@ -3,6 +3,7 @@ package io.github.kaleidscoper.abysscurse.visual;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -31,9 +32,18 @@ public class VisualManager {
     /**
      * 更新玩家层级显示
      * 当玩家进入新层级时显示 Title，并更新 BossBar
+     * 注意：只在主世界（NORMAL 环境）显示
      */
     public void updateLayerDisplay(Player player, int layer) {
         if (player == null || !player.isOnline()) {
+            return;
+        }
+        
+        // 只在主世界显示层级标题
+        World world = player.getWorld();
+        if (world == null || world.getEnvironment() != World.Environment.NORMAL) {
+            // 如果不在主世界，清除显示
+            clearLayerDisplay(player);
             return;
         }
         

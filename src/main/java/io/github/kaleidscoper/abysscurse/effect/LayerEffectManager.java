@@ -3,6 +3,7 @@ package io.github.kaleidscoper.abysscurse.effect;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.visual.VisualManager;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -41,9 +42,20 @@ public class LayerEffectManager {
     /**
      * 更新玩家层级效果
      * 根据玩家当前高度判断层级并施加对应效果
+     * 注意：只在主世界（NORMAL 环境）生效
      */
     public void updateLayerEffects(Player player) {
         if (player == null || !player.isOnline()) {
+            return;
+        }
+        
+        // 只在主世界显示层级标题
+        World world = player.getWorld();
+        if (world == null || world.getEnvironment() != World.Environment.NORMAL) {
+            // 如果不在主世界，清除视觉显示
+            if (visualManager != null) {
+                visualManager.clearLayerDisplay(player);
+            }
             return;
         }
         
