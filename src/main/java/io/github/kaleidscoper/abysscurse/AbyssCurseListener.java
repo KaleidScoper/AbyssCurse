@@ -252,23 +252,18 @@ public class AbyssCurseListener implements Listener {
                 
                 // 处理 Y 坐标变化
                 if (currentY > lastY) {
-                    // 上升：计算上升的方块数并记录
-                    // 使用 Math.round 而不是 Math.floor，以更准确地计算上升格数
-                    // 例如：上升 1.5 格应该算作 2 格，上升 0.6 格应该算作 1 格
+                    // 上升：记录真实浮点增量，避免因四舍五入误判
                     double riseDelta = currentY - lastY;
-                    int rise = (int) Math.round(riseDelta);
                     
-                    // 如果上升距离很小（小于0.1格），可能是浮点误差，忽略
-                    if (riseDelta < 0.1) {
-                        // 可能是浮点误差，不记录
-                    } else if (rise > 0) {
-                        data.addRise(rise);
+                    // 忽略极小抖动
+                    if (riseDelta >= 0.01) {
+                        data.addRiseDelta(riseDelta);
                         
                         // 获取当前累计上升高度（自动清理过期记录）
-                        int totalRise = data.getTotalRise();
+                        double totalRise = data.getTotalRise();
                         
                         // 检查是否达到触发诅咒的阈值（2m）
-                        if (totalRise >= 2) {
+                        if (totalRise >= 2.0) {
                             // 触发诅咒
                             double safeHeight = data.getSafeHeight();
                             curseManager.triggerCurse(player, safeHeight);
@@ -280,13 +275,17 @@ public class AbyssCurseListener implements Listener {
                         }
                     }
                 } else if (currentY < lastY) {
-                    // 下降：刷新安全高度，不清除累计上升
+                    // 下降：减少累计上升高度，刷新安全高度
+                    double descendDelta = lastY - currentY;
+                    if (descendDelta >= 0.01) {
+                        data.consumeRiseDelta(descendDelta);
+                    }
                     data.setSafeHeight(currentY);
                 }
                 
                 // 累计上升高度为零时，将当前高度设为新的安全高度
-                int totalRise = data.getTotalRise();
-                if (totalRise == 0 && data.getSafeHeight() != currentY) {
+                double totalRise = data.getTotalRise();
+                if (totalRise <= 1e-6 && data.getSafeHeight() != currentY) {
                     data.setSafeHeight(currentY);
                 }
                 

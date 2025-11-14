@@ -1,7 +1,6 @@
 package io.github.kaleidscoper.abysscurse.data;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 /**
  * 玩家诅咒数据
@@ -14,8 +13,11 @@ public class PlayerCurseData {
     // 上次检查时的 Y 坐标（用于计算上升/下降）
     private double lastY;
     
-    // 累计上升记录时间（时间戳队列，每个时间戳代表1格上升）
-    private final Queue<Long> riseTimestamps;
+    // 累计上升记录（每条记录包含时间戳与对应的高度增量）
+    private final ConcurrentLinkedDeque<RiseRecord> riseRecords;
+    
+    // 当前累计上升高度（含未满一格的小数）
+    private double totalRise;
     
     // 当前诅咒层级（1-7，0表示无诅咒）
     private int currentLayer;
@@ -41,7 +43,8 @@ public class PlayerCurseData {
     public PlayerCurseData(double initialY) {
         this.safeHeight = initialY;
         this.lastY = initialY;
-        this.riseTimestamps = new ConcurrentLinkedQueue<>();
+        this.riseRecords = new ConcurrentLinkedDeque<>();
+        this.totalRise = 0.0;
         this.currentLayer = 0;
         this.curseStartTime = 0;
         this.curseDuration = 0;
@@ -79,34 +82,98 @@ public class PlayerCurseData {
     }
 
     /**
-     * 添加上升记录
-     * @param blocks 上升的方块数
+     * 按浮点增量记录上升
+     * @param riseDelta 本次上升的高度（>0）
      */
-    public void addRise(int blocks) {
-        long now = System.currentTimeMillis();
-        for (int i = 0; i < blocks; i++) {
-            riseTimestamps.offer(now);
+    public void addRiseDelta(double riseDelta) {
+        if (riseDelta <= 0) {
+            return;
         }
+        long now = System.currentTimeMillis();
+        riseRecords.addLast(new RiseRecord(now, riseDelta));
+        totalRise += riseDelta;
     }
 
     /**
      * 获取当前累计上升高度
      * 自动清理过期记录
      */
-    public int getTotalRise() {
-        long expireTime = System.currentTimeMillis() - EXPIRE_TIME;
-        // 清理队列头部的过期项
-        while (!riseTimestamps.isEmpty() && riseTimestamps.peek() < expireTime) {
-            riseTimestamps.poll();
-        }
-        return riseTimestamps.size();
+    public double getTotalRise() {
+        cleanupExpiredRise();
+        return Math.max(0.0, totalRise);
     }
 
     /**
      * 清空累计上升记录
      */
     public void clearRiseRecords() {
-        riseTimestamps.clear();
+        riseRecords.clear();
+        totalRise = 0.0;
+    }
+
+    /**
+     * 下降时消耗累计上升高度（最多减至 0）
+     * @param descendDelta 下降的高度（>0）
+     */
+    public void consumeRiseDelta(double descendDelta) {
+        if (descendDelta <= 0) {
+            return;
+        }
+        cleanupExpiredRise();
+        if (descendDelta >= totalRise) {
+            clearRiseRecords();
+            return;
+        }
+        double remaining = descendDelta;
+        while (remaining > 0 && !riseRecords.isEmpty()) {
+            RiseRecord last = riseRecords.peekLast();
+            if (last == null) {
+                break;
+            }
+            if (last.amount <= remaining + 1e-9) {
+                remaining -= last.amount;
+                totalRise -= last.amount;
+                riseRecords.pollLast();
+            } else {
+                last.amount -= remaining;
+                totalRise -= remaining;
+                remaining = 0;
+            }
+        }
+        if (totalRise < 0) {
+            totalRise = 0;
+        }
+    }
+
+    /**
+     * 清除过期的上升记录
+     */
+    private void cleanupExpiredRise() {
+        long expireTime = System.currentTimeMillis() - EXPIRE_TIME;
+        while (!riseRecords.isEmpty()) {
+            RiseRecord first = riseRecords.peekFirst();
+            if (first == null || first.timestamp >= expireTime) {
+                break;
+            }
+            totalRise -= first.amount;
+            riseRecords.pollFirst();
+        }
+        if (totalRise < 0) {
+            totalRise = 0;
+        }
+    }
+
+    /**
+     * 累计上升记录
+     */
+    private static class RiseRecord {
+        private final long timestamp;
+        private double amount;
+
+        private RiseRecord(long timestamp, double amount) {
+            this.timestamp = timestamp;
+            this.amount = amount;
+        }
     }
 
     /**

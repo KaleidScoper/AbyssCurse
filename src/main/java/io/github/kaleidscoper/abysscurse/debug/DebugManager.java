@@ -141,10 +141,10 @@ public class DebugManager {
             builder.append(Component.text(" | ", NamedTextColor.GRAY));
             
             // 累计上升高度
-            int totalRise = data.getTotalRise();
+            double totalRise = data.getTotalRise();
             builder.append(Component.text("上升: ", NamedTextColor.GRAY));
-            builder.append(Component.text(String.valueOf(totalRise), 
-                totalRise >= 2 ? NamedTextColor.RED : NamedTextColor.YELLOW));
+            builder.append(Component.text(String.format("%.2f", totalRise), 
+                totalRise >= 2.0 ? NamedTextColor.RED : NamedTextColor.YELLOW));
             
             // 安全高度
             builder.append(Component.text(" | ", NamedTextColor.GRAY));
@@ -273,7 +273,7 @@ public class DebugManager {
         PlayerCurseData data = playerDataManager.getData(player);
         if (data != null) {
             info.append("§7当前层级: §e").append(data.getCurrentLayer() > 0 ? String.valueOf(data.getCurrentLayer()) : "无").append("\n");
-            info.append("§7累计上升高度: §e").append(data.getTotalRise()).append(" 格\n");
+            info.append("§7累计上升高度: §e").append(String.format("%.2f", data.getTotalRise())).append(" 格\n");
             info.append("§7安全高度: §e").append(String.format("%.2f", data.getSafeHeight())).append("\n");
             info.append("§7是否为生骸: §e").append(data.isNarehate() ? "是" : "否").append("\n");
             if (data.isNarehate() && data.getNarehateType() != null) {

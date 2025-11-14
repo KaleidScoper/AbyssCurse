@@ -39,13 +39,14 @@ public class FilterManager {
     /**
      * 更新滤镜（根据累计上升高度）
      */
-    public void updateFilter(Player player, int totalRise) {
+    public void updateFilter(Player player, double totalRise) {
         if (player == null || !player.isOnline()) {
             return;
         }
         
         UUID uuid = player.getUniqueId();
         boolean isCurseFilter = curseFilterState.getOrDefault(uuid, false);
+        int intensity = toIntensity(totalRise);
         
         // 第一层诅咒状态：强制显示"累计上升高度2"的文字
         if (isCurseFilter) {
@@ -54,13 +55,7 @@ public class FilterManager {
         }
         
         // 正常状态：根据累计上升高度显示
-        if (totalRise == 0) {
-            // 不显示滤镜
-            player.sendActionBar(Component.empty());
-            return;
-        }
-        
-        updateFilterWithColor(player, totalRise);
+        updateFilterWithColor(player, intensity);
     }
     
     /**
@@ -75,9 +70,9 @@ public class FilterManager {
         } else {
             curseFilterState.remove(uuid);
             // 恢复正常的累计上升高度滤镜
-            int totalRise = playerDataManager.getData(player).getTotalRise();
+            double totalRise = playerDataManager.getData(player).getTotalRise();
             updateFilter(player, totalRise);
-            lastDisplayedRise.put(uuid, totalRise); // 更新记录
+            lastDisplayedRise.put(uuid, toIntensity(totalRise)); // 更新记录
         }
     }
     
@@ -100,7 +95,13 @@ public class FilterManager {
         }
         
         // 正常状态：根据累计上升高度显示文字
-        if (intensity == 1) {
+        if (intensity <= 0) {
+            Component filterText = Component.text()
+                .content("累计上升高度0")
+                .color(filterColor)
+                .build();
+            player.sendActionBar(filterText);
+        } else if (intensity == 1) {
             Component filterText = Component.text()
                 .content("累计上升高度1")
                 .color(filterColor)
@@ -122,6 +123,10 @@ public class FilterManager {
      * 获取滤镜颜色
      */
     private TextColor getFilterColor(int totalRise) {
+        if (totalRise <= 0) {
+            // 灰色：表示已清空
+            return TextColor.color(160, 160, 160);
+        }
         if (totalRise == 1) {
             // 轻微红色：RGB(255, 100, 100)
             return TextColor.color(255, 100, 100);
@@ -150,7 +155,8 @@ public class FilterManager {
                         continue;
                     }
                     
-                    int totalRise = data.getTotalRise();
+                    double totalRise = data.getTotalRise();
+                    int intensity = toIntensity(totalRise);
                     UUID uuid = player.getUniqueId();
                     
                     // 只在累计上升高度变化或处于诅咒状态时才更新
@@ -159,9 +165,9 @@ public class FilterManager {
                     boolean isCurseFilter = curseFilterState.getOrDefault(uuid, false);
                     
                     // 如果累计上升高度变化了，或者处于诅咒状态，才更新
-                    if (lastRise == null || lastRise != totalRise || isCurseFilter) {
+                    if (lastRise == null || lastRise != intensity || isCurseFilter) {
                         updateFilter(player, totalRise);
-                        lastDisplayedRise.put(uuid, totalRise);
+                        lastDisplayedRise.put(uuid, intensity);
                     }
                 }
             }
@@ -183,6 +189,19 @@ public class FilterManager {
         if (updateTask != null && !updateTask.isCancelled()) {
             updateTask.cancel();
         }
+    }
+
+    /**
+     * 将累计上升高度转换为滤镜显示强度（0/1/2）
+     */
+    private int toIntensity(double totalRise) {
+        if (totalRise >= 2.0) {
+            return 2;
+        }
+        if (totalRise >= 1.0) {
+            return 1;
+        }
+        return 0;
     }
 }
 
