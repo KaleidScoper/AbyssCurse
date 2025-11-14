@@ -1,5 +1,6 @@
 package io.github.kaleidscoper.abysscurse.curse;
 
+import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.filter.FilterManager;
@@ -23,6 +24,7 @@ public class CurseManager {
     private final JavaPlugin plugin;
     private final PlayerDataManager playerDataManager;
     private final RegionManager regionManager;
+    private final ConfigManager configManager;
     
     // 存储诅咒检查任务
     private final Map<UUID, BukkitTask> curseCheckTasks = new HashMap<>();
@@ -34,10 +36,11 @@ public class CurseManager {
     private FilterManager filterManager;
     private SoundManager soundManager;
     
-    public CurseManager(JavaPlugin plugin, PlayerDataManager playerDataManager, RegionManager regionManager) {
+    public CurseManager(JavaPlugin plugin, PlayerDataManager playerDataManager, RegionManager regionManager, ConfigManager configManager) {
         this.plugin = plugin;
         this.playerDataManager = playerDataManager;
         this.regionManager = regionManager;
+        this.configManager = configManager;
     }
     
     /**
@@ -131,14 +134,7 @@ public class CurseManager {
      * @return 诅咒层级（1-7），0表示不在任何层级
      */
     public int getCurseLayer(double safeHeight) {
-        if (safeHeight >= 85 && safeHeight < 96) return 1;  // 第一层：阿比斯之渊
-        if (safeHeight >= 75 && safeHeight < 85) return 2;  // 第二层：诱惑之森
-        if (safeHeight >= 40 && safeHeight < 75) return 3;  // 第三层：大断层
-        if (safeHeight >= 0 && safeHeight < 40) return 4;   // 第四层：巨人之杯
-        if (safeHeight >= -8 && safeHeight < 0) return 5;   // 第五层：亡骸之海
-        if (safeHeight >= -28 && safeHeight < -8) return 6; // 第六层：来无还之都
-        if (safeHeight >= -64 && safeHeight < -28) return 7; // 第七层：最终极之涡
-        return 0;
+        return configManager.getLayerByHeight(safeHeight);
     }
     
     /**

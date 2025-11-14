@@ -160,9 +160,17 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         }
 
         try {
+            // 重载配置文件（包括层级范围配置）
             configManager.reloadConfig();
+            
+            // 重载模式配置
             modeManager.reload();
+            
+            // 重载区域配置（豁免区和豁免者）
+            regionManager.reload();
+            
             sender.sendMessage("§8[§5AbyssCurse§8] §a配置已重载！");
+            plugin.getLogger().info("配置已重载（包括层级范围、模式和区域配置）");
         } catch (Exception e) {
             sender.sendMessage("§8[§5AbyssCurse§8] §c重载失败: " + e.getMessage());
             plugin.getLogger().severe("重载配置时发生错误: " + e.getMessage());

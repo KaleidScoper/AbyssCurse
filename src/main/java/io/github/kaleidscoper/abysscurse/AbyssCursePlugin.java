@@ -77,12 +77,12 @@ public final class AbyssCursePlugin extends JavaPlugin {
             getLogger().info("视觉管理器已初始化");
             
             // 初始化层级效果管理器
-            layerEffectManager = new LayerEffectManager(this, playerDataManager, effectManager);
+            layerEffectManager = new LayerEffectManager(this, playerDataManager, effectManager, configManager);
             layerEffectManager.setVisualManager(visualManager);
             getLogger().info("层级效果管理器已初始化");
             
             // 初始化诅咒管理器（需要在依赖管理器创建之后）
-            curseManager = new CurseManager(this, playerDataManager, regionManager);
+            curseManager = new CurseManager(this, playerDataManager, regionManager, configManager);
             curseManager.setEffectHandler(effectManager);
             curseManager.setFilterManager(filterManager);
             curseManager.setSoundManager(soundManager);

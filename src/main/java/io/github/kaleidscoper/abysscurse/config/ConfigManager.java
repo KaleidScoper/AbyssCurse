@@ -87,6 +87,18 @@ public class ConfigManager {
         if (!config.contains("rise-threshold")) {
             config.set("rise-threshold", 2.0);
         }
+        
+        // 层级范围配置
+        for (int layer = 1; layer <= 7; layer++) {
+            String minKey = "layers." + layer + ".min";
+            String maxKey = "layers." + layer + ".max";
+            if (!config.contains(minKey)) {
+                config.set(minKey, getDefaultLayerMin(layer));
+            }
+            if (!config.contains(maxKey)) {
+                config.set(maxKey, getDefaultLayerMax(layer));
+            }
+        }
     }
 
     /**
@@ -219,6 +231,80 @@ public class ConfigManager {
     public void setRiseThreshold(double threshold) {
         config.set("rise-threshold", threshold);
         saveConfig();
+    }
+    
+    /**
+     * 获取指定层级的最小高度
+     * @param layer 层级（1-7）
+     * @return 最小高度
+     */
+    public double getLayerMinHeight(int layer) {
+        if (layer < 1 || layer > 7) {
+            plugin.getLogger().warning("无效的层级: " + layer + "，使用默认值");
+            return 0.0;
+        }
+        return config.getDouble("layers." + layer + ".min", getDefaultLayerMin(layer));
+    }
+    
+    /**
+     * 获取指定层级的最大高度
+     * @param layer 层级（1-7）
+     * @return 最大高度
+     */
+    public double getLayerMaxHeight(int layer) {
+        if (layer < 1 || layer > 7) {
+            plugin.getLogger().warning("无效的层级: " + layer + "，使用默认值");
+            return 0.0;
+        }
+        return config.getDouble("layers." + layer + ".max", getDefaultLayerMax(layer));
+    }
+    
+    /**
+     * 根据高度判断层级
+     * @param y 高度
+     * @return 层级（1-7），0表示不在任何层级
+     */
+    public int getLayerByHeight(double y) {
+        for (int layer = 1; layer <= 7; layer++) {
+            double min = getLayerMinHeight(layer);
+            double max = getLayerMaxHeight(layer);
+            if (y >= min && y < max) {
+                return layer;
+            }
+        }
+        return 0;
+    }
+    
+    /**
+     * 获取默认层级最小高度（用于配置缺失时的回退）
+     */
+    private double getDefaultLayerMin(int layer) {
+        switch (layer) {
+            case 1: return 85.0;
+            case 2: return 75.0;
+            case 3: return 40.0;
+            case 4: return 0.0;
+            case 5: return -8.0;
+            case 6: return -28.0;
+            case 7: return -64.0;
+            default: return 0.0;
+        }
+    }
+    
+    /**
+     * 获取默认层级最大高度（用于配置缺失时的回退）
+     */
+    private double getDefaultLayerMax(int layer) {
+        switch (layer) {
+            case 1: return 96.0;
+            case 2: return 85.0;
+            case 3: return 75.0;
+            case 4: return 40.0;
+            case 5: return 0.0;
+            case 6: return -8.0;
+            case 7: return -28.0;
+            default: return 0.0;
+        }
     }
 }
 

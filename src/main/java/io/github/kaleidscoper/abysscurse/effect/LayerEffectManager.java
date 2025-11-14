@@ -1,5 +1,6 @@
 package io.github.kaleidscoper.abysscurse.effect;
 
+import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.visual.VisualManager;
 import org.bukkit.entity.Player;
@@ -16,15 +17,17 @@ public class LayerEffectManager {
     private final JavaPlugin plugin;
     private final PlayerDataManager playerDataManager;
     private final EffectManager effectManager;
+    private final ConfigManager configManager;
     private VisualManager visualManager;
     
     // 定期检查任务
     private BukkitTask checkTask;
     
-    public LayerEffectManager(JavaPlugin plugin, PlayerDataManager playerDataManager, EffectManager effectManager) {
+    public LayerEffectManager(JavaPlugin plugin, PlayerDataManager playerDataManager, EffectManager effectManager, ConfigManager configManager) {
         this.plugin = plugin;
         this.playerDataManager = playerDataManager;
         this.effectManager = effectManager;
+        this.configManager = configManager;
         startCheckTask();
     }
     
@@ -70,14 +73,7 @@ public class LayerEffectManager {
      * 根据高度判断层级
      */
     private int getLayerByHeight(double y) {
-        if (y >= 85 && y < 96) return 1;  // 第一层：阿比斯之渊
-        if (y >= 75 && y < 85) return 2;   // 第二层：诱惑之森
-        if (y >= 40 && y < 75) return 3;   // 第三层：大断层
-        if (y >= 0 && y < 40) return 4;    // 第四层：巨人之杯
-        if (y >= -8 && y < 0) return 5;    // 第五层：亡骸之海
-        if (y >= -28 && y < -8) return 6;  // 第六层：来无还之都
-        if (y >= -64 && y < -28) return 7; // 第七层：最终极之涡
-        return 0;
+        return configManager.getLayerByHeight(y);
     }
     
     /**
