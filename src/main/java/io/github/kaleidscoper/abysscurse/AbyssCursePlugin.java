@@ -62,29 +62,29 @@ public final class AbyssCursePlugin extends JavaPlugin {
             effectManager = new EffectManager(this, playerDataManager);
             getLogger().info("效果管理器已初始化");
             
+            // 初始化滤镜管理器（需要在 CurseManager 之前创建）
+            filterManager = new FilterManager(this, playerDataManager);
+            getLogger().info("滤镜管理器已初始化");
+            
+            // 初始化音效管理器（需要在 CurseManager 之前创建）
+            soundManager = new SoundManager(this);
+            getLogger().info("音效管理器已初始化");
+            
+            // 初始化视觉管理器（需要在 LayerEffectManager 之前创建）
+            visualManager = new VisualManager(this);
+            getLogger().info("视觉管理器已初始化");
+            
             // 初始化层级效果管理器
             layerEffectManager = new LayerEffectManager(this, playerDataManager, effectManager);
             layerEffectManager.setVisualManager(visualManager);
             getLogger().info("层级效果管理器已初始化");
             
-            // 初始化诅咒管理器
+            // 初始化诅咒管理器（需要在依赖管理器创建之后）
             curseManager = new CurseManager(this, playerDataManager, regionManager);
             curseManager.setEffectHandler(effectManager);
             curseManager.setFilterManager(filterManager);
             curseManager.setSoundManager(soundManager);
             getLogger().info("诅咒管理器已初始化");
-            
-            // 初始化滤镜管理器
-            filterManager = new FilterManager(this, playerDataManager);
-            getLogger().info("滤镜管理器已初始化");
-            
-            // 初始化音效管理器
-            soundManager = new SoundManager(this);
-            getLogger().info("音效管理器已初始化");
-            
-            // 初始化视觉管理器
-            visualManager = new VisualManager(this);
-            getLogger().info("视觉管理器已初始化");
 
             // 初始化调试管理器
             debugManager = new DebugManager(this, configManager, modeManager, regionManager, playerDataManager);
