@@ -3,6 +3,7 @@ package io.github.kaleidscoper.abysscurse.curse;
 import io.github.kaleidscoper.abysscurse.AbyssCursePlugin;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
+import io.github.kaleidscoper.abysscurse.effect.EffectManager;
 import io.github.kaleidscoper.abysscurse.region.RegionManager;
 import org.bukkit.Location;
 import org.bukkit.Particle;
@@ -169,11 +170,66 @@ public class NarehateManager {
         // 播放不死图腾粒子效果
         playTotemEffect(player);
         
+        // 应用生骸的药水效果
+        applyNarehateEffects(player, type);
+        
         // 发送消息给玩家
         String typeName = type == PlayerCurseData.NarehateType.LUCKY ? "幸运生骸" : "悲惨生骸";
         player.sendMessage("§8[§5AbyssCurse§8] §c你已转变为" + typeName + "！");
         
         plugin.getLogger().info("玩家 " + player.getName() + " 已转变为" + typeName);
+    }
+    
+    /**
+     * 应用生骸的药水效果
+     * 根据生骸类型给予不同的永久性正面效果
+     * 
+     * @param player 玩家
+     * @param type 生骸类型
+     */
+    public void applyNarehateEffects(Player player, PlayerCurseData.NarehateType type) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+        
+        // 获取效果管理器
+        if (!(plugin instanceof AbyssCursePlugin)) {
+            return;
+        }
+        
+        AbyssCursePlugin abyssPlugin = (AbyssCursePlugin) plugin;
+        EffectManager effectManager = abyssPlugin.getEffectManager();
+        
+        if (effectManager == null) {
+            plugin.getLogger().warning("无法获取效果管理器，无法应用生骸效果");
+            return;
+        }
+        
+        // 根据生骸类型应用不同的效果
+        // 注意：由于生骸效果的优先级最高（NAREHATE = 3），即使玩家身上已有其他来源的同类型效果，也会被覆盖
+        if (type == PlayerCurseData.NarehateType.LUCKY) {
+            // 幸运生骸：迅捷2，急迫2，力量2，跳跃提升2，夜视，生命恢复2，村庄英雄，海豚的恩惠，潮涌能量，幸运
+            effectManager.addEffect(player, PotionEffectType.SPEED, 1, -1, EffectManager.EffectSource.NAREHATE); // 迅捷2 (amplifier=1表示2级)
+            effectManager.addEffect(player, PotionEffectType.HASTE, 1, -1, EffectManager.EffectSource.NAREHATE); // 急迫2
+            effectManager.addEffect(player, PotionEffectType.STRENGTH, 1, -1, EffectManager.EffectSource.NAREHATE); // 力量2
+            effectManager.addEffect(player, PotionEffectType.JUMP_BOOST, 1, -1, EffectManager.EffectSource.NAREHATE); // 跳跃提升2
+            effectManager.addEffect(player, PotionEffectType.NIGHT_VISION, 0, -1, EffectManager.EffectSource.NAREHATE); // 夜视
+            effectManager.addEffect(player, PotionEffectType.REGENERATION, 1, -1, EffectManager.EffectSource.NAREHATE); // 生命恢复2
+            effectManager.addEffect(player, PotionEffectType.HERO_OF_THE_VILLAGE, 0, -1, EffectManager.EffectSource.NAREHATE); // 村庄英雄
+            effectManager.addEffect(player, PotionEffectType.DOLPHINS_GRACE, 0, -1, EffectManager.EffectSource.NAREHATE); // 海豚的恩惠
+            effectManager.addEffect(player, PotionEffectType.CONDUIT_POWER, 0, -1, EffectManager.EffectSource.NAREHATE); // 潮涌能量
+            effectManager.addEffect(player, PotionEffectType.LUCK, 0, -1, EffectManager.EffectSource.NAREHATE); // 幸运
+        } else if (type == PlayerCurseData.NarehateType.SAD) {
+            // 悲惨生骸：生命恢复2，抗性提升4，伤害吸收4，抗火，水下呼吸，缓降
+            effectManager.addEffect(player, PotionEffectType.REGENERATION, 1, -1, EffectManager.EffectSource.NAREHATE); // 生命恢复2
+            effectManager.addEffect(player, PotionEffectType.RESISTANCE, 3, -1, EffectManager.EffectSource.NAREHATE); // 抗性提升4 (amplifier=3表示4级)
+            effectManager.addEffect(player, PotionEffectType.ABSORPTION, 3, -1, EffectManager.EffectSource.NAREHATE); // 伤害吸收4
+            effectManager.addEffect(player, PotionEffectType.FIRE_RESISTANCE, 0, -1, EffectManager.EffectSource.NAREHATE); // 抗火
+            effectManager.addEffect(player, PotionEffectType.WATER_BREATHING, 0, -1, EffectManager.EffectSource.NAREHATE); // 水下呼吸
+            effectManager.addEffect(player, PotionEffectType.SLOW_FALLING, 0, -1, EffectManager.EffectSource.NAREHATE); // 缓降
+        }
+        
+        plugin.getLogger().info("已为玩家 " + player.getName() + " 应用生骸效果，类型: " + type.name());
     }
     
     /**

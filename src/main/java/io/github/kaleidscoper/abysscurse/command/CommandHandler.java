@@ -5,6 +5,7 @@ import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.debug.DebugManager;
+import io.github.kaleidscoper.abysscurse.effect.EffectManager;
 import io.github.kaleidscoper.abysscurse.mode.ModeManager;
 import io.github.kaleidscoper.abysscurse.mode.PluginMode;
 import io.github.kaleidscoper.abysscurse.region.RegionManager;
@@ -348,11 +349,13 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             // 添加到豁免者列表
             regionManager.addExemptPlayer(targetUuid);
             
-            // 播放不死图腾粒子效果
+            // 播放不死图腾粒子效果并应用生骸药水效果
             if (plugin instanceof AbyssCursePlugin) {
                 AbyssCursePlugin abyssPlugin = (AbyssCursePlugin) plugin;
                 if (abyssPlugin.getNarehateManager() != null) {
                     abyssPlugin.getNarehateManager().playTotemEffect(targetPlayer);
+                    // 立即应用生骸药水效果
+                    abyssPlugin.getNarehateManager().applyNarehateEffects(targetPlayer, type);
                 }
             }
             
@@ -422,6 +425,17 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
             
             // 从豁免者列表移除
             regionManager.removeExemptPlayer(targetUuid);
+            
+            // 移除生骸药水效果
+            if (plugin instanceof AbyssCursePlugin) {
+                AbyssCursePlugin abyssPlugin = (AbyssCursePlugin) plugin;
+                if (abyssPlugin.getEffectManager() != null) {
+                    abyssPlugin.getEffectManager().removeEffectsBySource(
+                        targetPlayer, 
+                        EffectManager.EffectSource.NAREHATE
+                    );
+                }
+            }
             
             // 异步保存数据
             playerDataManager.savePlayerDataAsync(targetPlayer);

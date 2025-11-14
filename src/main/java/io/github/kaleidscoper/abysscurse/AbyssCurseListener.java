@@ -73,6 +73,18 @@ public class AbyssCurseListener implements Listener {
         // 清空累计上升记录（玩家重新进入游戏时从新的安全高度开始）
         data.clearRiseRecords();
         
+        // 如果玩家是生骸，重新应用生骸效果
+        if (data.isNarehate() && data.getNarehateType() != null) {
+            if (plugin.getNarehateManager() != null) {
+                // 延迟一小段时间确保玩家完全加载
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    if (player.isOnline()) {
+                        plugin.getNarehateManager().applyNarehateEffects(player, data.getNarehateType());
+                    }
+                }, 20L); // 延迟1秒（20tick）
+            }
+        }
+        
         // 发送欢迎消息
         player.sendMessage("§8[§5AbyssCurse§8] §7欢迎来到深渊，探窟家" + player.getName() + "！");
         
