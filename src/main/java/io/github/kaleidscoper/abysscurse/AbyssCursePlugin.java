@@ -3,6 +3,7 @@ package io.github.kaleidscoper.abysscurse;
 import io.github.kaleidscoper.abysscurse.command.CommandHandler;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.curse.CurseManager;
+import io.github.kaleidscoper.abysscurse.curse.NarehateManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.debug.DebugManager;
 import io.github.kaleidscoper.abysscurse.effect.EffectManager;
@@ -28,6 +29,7 @@ public final class AbyssCursePlugin extends JavaPlugin {
     private EffectManager effectManager;
     private LayerEffectManager layerEffectManager;
     private CurseManager curseManager;
+    private NarehateManager narehateManager;
     private FilterManager filterManager;
     private SoundManager soundManager;
     private VisualManager visualManager;
@@ -85,13 +87,17 @@ public final class AbyssCursePlugin extends JavaPlugin {
             curseManager.setFilterManager(filterManager);
             curseManager.setSoundManager(soundManager);
             getLogger().info("诅咒管理器已初始化");
+            
+            // 初始化生骸管理器
+            narehateManager = new NarehateManager(this, playerDataManager, regionManager);
+            getLogger().info("生骸管理器已初始化");
 
             // 初始化调试管理器
             debugManager = new DebugManager(this, configManager, modeManager, regionManager, playerDataManager);
             getLogger().info("调试管理器已初始化");
 
             // 初始化命令处理器
-            commandHandler = new CommandHandler(this, modeManager, configManager, debugManager);
+            commandHandler = new CommandHandler(this, modeManager, configManager, debugManager, playerDataManager, regionManager);
             getCommand("abysscurse").setExecutor(commandHandler);
             getCommand("abysscurse").setTabCompleter(commandHandler);
             getLogger().info("命令处理器已注册");
@@ -146,6 +152,9 @@ public final class AbyssCursePlugin extends JavaPlugin {
         }
         if (visualManager != null) {
             visualManager.stop();
+        }
+        if (narehateManager != null) {
+            narehateManager.stop();
         }
         if (debugManager != null) {
             debugManager.stop();
@@ -234,5 +243,12 @@ public final class AbyssCursePlugin extends JavaPlugin {
      */
     public VisualManager getVisualManager() {
         return visualManager;
+    }
+    
+    /**
+     * 获取生骸管理器
+     */
+    public NarehateManager getNarehateManager() {
+        return narehateManager;
     }
 }

@@ -150,7 +150,7 @@ public class EffectManager implements CurseEffectHandler {
                 addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.POISON, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.WITHER, 1, (int)duration, EffectSource.CURSE);
-                // 注意：寄生效果在第四阶段实现
+                addEffect(player, PotionEffectType.OOZING, 1, (int)duration, EffectSource.CURSE); // 寄生（虫蚀）
                 break;
             case 7: // 第七层：最终极之涡
                 addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
@@ -163,6 +163,7 @@ public class EffectManager implements CurseEffectHandler {
                 addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.POISON, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.WITHER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.OOZING, 1, (int)duration, EffectSource.CURSE); // 寄生（虫蚀）
                 addEffect(player, PotionEffectType.INSTANT_DAMAGE, 1, (int)duration, EffectSource.CURSE);
                 break;
         }

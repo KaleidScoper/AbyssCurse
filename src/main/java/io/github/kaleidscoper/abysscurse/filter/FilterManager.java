@@ -204,4 +204,3 @@ public class FilterManager {
         return 0;
     }
 }
-

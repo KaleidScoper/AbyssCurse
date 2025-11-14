@@ -198,5 +198,37 @@ public class PlayerDataManager {
             savePlayerData(player);
         }
     }
+
+    /**
+     * 异步加载玩家数据（用于离线玩家）
+     * @param uuid 玩家 UUID
+     * @param callback 回调函数，在主线程中执行
+     */
+    public void loadPlayerDataAsync(UUID uuid, java.util.function.Consumer<PlayerCurseData> callback) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            PlayerCurseData data = loadPlayerData(uuid);
+            // 在主线程中执行回调
+            plugin.getServer().getScheduler().runTask(plugin, () -> callback.accept(data));
+        });
+    }
+
+    /**
+     * 异步保存玩家数据（通过 UUID）
+     * @param uuid 玩家 UUID
+     * @param data 玩家数据
+     */
+    public void savePlayerDataAsync(UUID uuid, PlayerCurseData data) {
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            savePlayerDataSync(uuid, data);
+        });
+    }
+
+    /**
+     * 异步保存玩家数据（通过 Player 对象，别名方法）
+     * @param player 玩家
+     */
+    public void savePlayerDataAsync(Player player) {
+        savePlayerData(player);
+    }
 }
 

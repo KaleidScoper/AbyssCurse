@@ -1,9 +1,15 @@
 package io.github.kaleidscoper.abysscurse.command;
 
+import io.github.kaleidscoper.abysscurse.AbyssCursePlugin;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
+import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
+import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.debug.DebugManager;
 import io.github.kaleidscoper.abysscurse.mode.ModeManager;
 import io.github.kaleidscoper.abysscurse.mode.PluginMode;
+import io.github.kaleidscoper.abysscurse.region.RegionManager;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -14,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -25,12 +32,16 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     private final ModeManager modeManager;
     private final ConfigManager configManager;
     private final DebugManager debugManager;
+    private final PlayerDataManager playerDataManager;
+    private final RegionManager regionManager;
 
-    public CommandHandler(JavaPlugin plugin, ModeManager modeManager, ConfigManager configManager, DebugManager debugManager) {
+    public CommandHandler(JavaPlugin plugin, ModeManager modeManager, ConfigManager configManager, DebugManager debugManager, PlayerDataManager playerDataManager, RegionManager regionManager) {
         this.plugin = plugin;
         this.modeManager = modeManager;
         this.configManager = configManager;
         this.debugManager = debugManager;
+        this.playerDataManager = playerDataManager;
+        this.regionManager = regionManager;
     }
 
     @Override
@@ -51,6 +62,8 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                 return handleInfoCommand(sender);
             case "debug":
                 return handleDebugCommand(sender, args);
+            case "narehate":
+                return handleNarehateCommand(sender, args);
             default:
                 sender.sendMessage("§8[§5AbyssCurse§8] §c未知命令: " + subCommand);
                 sendHelp(sender);
@@ -245,6 +258,230 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
     }
 
     /**
+     * 处理生骸命令
+     * /abysscurse narehate <set|remove|check> <player>
+     */
+    private boolean handleNarehateCommand(CommandSender sender, String[] args) {
+        // 检查权限
+        if (!sender.hasPermission("abysscurse.admin")) {
+            sender.sendMessage("§8[§5AbyssCurse§8] §c你没有权限使用此命令！");
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage("§8[§5AbyssCurse§8] §c用法: /abysscurse narehate <set|remove|check> <player>");
+            return true;
+        }
+
+        String action = args[1].toLowerCase();
+        
+        if (args.length < 3) {
+            sender.sendMessage("§8[§5AbyssCurse§8] §c用法: /abysscurse narehate <set|remove|check> <player>");
+            return true;
+        }
+
+        // 获取目标玩家
+        String playerName = args.length >= 3 ? args[2] : null;
+        Player targetPlayer = null;
+        OfflinePlayer offlinePlayer = null;
+        
+        if (playerName != null) {
+            // 尝试获取在线玩家
+            targetPlayer = Bukkit.getPlayer(playerName);
+            if (targetPlayer == null) {
+                // 尝试获取离线玩家
+                offlinePlayer = Bukkit.getOfflinePlayer(playerName);
+                if (!offlinePlayer.hasPlayedBefore() && !offlinePlayer.isOnline()) {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §c找不到玩家: " + playerName);
+                    return true;
+                }
+            }
+        }
+
+        switch (action) {
+            case "set":
+                return handleSetNarehate(sender, targetPlayer, offlinePlayer, playerName);
+            case "remove":
+                return handleRemoveNarehate(sender, targetPlayer, offlinePlayer, playerName);
+            case "check":
+                return handleCheckNarehate(sender, targetPlayer, offlinePlayer, playerName);
+            default:
+                sender.sendMessage("§8[§5AbyssCurse§8] §c无效的操作: " + action);
+                sender.sendMessage("§8[§5AbyssCurse§8] §7可用操作: set, remove, check");
+                return true;
+        }
+    }
+
+    /**
+     * 设置玩家为生骸
+     */
+    private boolean handleSetNarehate(CommandSender sender, Player targetPlayer, OfflinePlayer offlinePlayer, String playerName) {
+        UUID targetUuid = targetPlayer != null ? targetPlayer.getUniqueId() : offlinePlayer.getUniqueId();
+        
+        // 如果玩家在线，直接操作数据
+        if (targetPlayer != null) {
+            PlayerCurseData data = playerDataManager.getData(targetPlayer);
+            if (data.isNarehate()) {
+                sender.sendMessage("§8[§5AbyssCurse§8] §e玩家 §7" + targetPlayer.getName() + " §e已经是生骸了！");
+                if (data.getNarehateType() != null) {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + data.getNarehateType().name());
+                }
+                return true;
+            }
+            
+            // 随机分配生骸类型
+            PlayerCurseData.NarehateType type = Math.random() < 0.5 
+                ? PlayerCurseData.NarehateType.LUCKY 
+                : PlayerCurseData.NarehateType.SAD;
+            
+            data.setNarehate(true);
+            data.setNarehateType(type);
+            
+            // 添加到豁免者列表
+            regionManager.addExemptPlayer(targetUuid);
+            
+            // 播放不死图腾粒子效果
+            if (plugin instanceof AbyssCursePlugin) {
+                AbyssCursePlugin abyssPlugin = (AbyssCursePlugin) plugin;
+                if (abyssPlugin.getNarehateManager() != null) {
+                    abyssPlugin.getNarehateManager().playTotemEffect(targetPlayer);
+                }
+            }
+            
+            // 异步保存数据
+            playerDataManager.savePlayerDataAsync(targetPlayer);
+            
+            sender.sendMessage("§8[§5AbyssCurse§8] §a已将玩家 §e" + targetPlayer.getName() + " §a设置为生骸！");
+            sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + type.name());
+            
+            if (targetPlayer.isOnline()) {
+                targetPlayer.sendMessage("§8[§5AbyssCurse§8] §a你已被设置为生骸！类型: §e" + type.name());
+            }
+        } else {
+            // 玩家离线，需要加载数据
+            playerDataManager.loadPlayerDataAsync(offlinePlayer.getUniqueId(), (data) -> {
+                if (data == null) {
+                    // 如果数据不存在，创建新数据
+                    data = new PlayerCurseData(0);
+                }
+                
+                if (data.isNarehate()) {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §e玩家 §7" + playerName + " §e已经是生骸了！");
+                    if (data.getNarehateType() != null) {
+                        sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + data.getNarehateType().name());
+                    }
+                    return;
+                }
+                
+                // 随机分配生骸类型
+                PlayerCurseData.NarehateType type = Math.random() < 0.5 
+                    ? PlayerCurseData.NarehateType.LUCKY 
+                    : PlayerCurseData.NarehateType.SAD;
+                
+                data.setNarehate(true);
+                data.setNarehateType(type);
+                
+                // 添加到豁免者列表
+                regionManager.addExemptPlayer(targetUuid);
+                
+                // 保存数据（玩家上线时会自动从文件加载）
+                playerDataManager.savePlayerDataAsync(targetUuid, data);
+                
+                sender.sendMessage("§8[§5AbyssCurse§8] §a已将玩家 §e" + playerName + " §a设置为生骸！");
+                sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + type.name());
+            });
+        }
+        
+        return true;
+    }
+
+    /**
+     * 移除玩家的生骸状态
+     */
+    private boolean handleRemoveNarehate(CommandSender sender, Player targetPlayer, OfflinePlayer offlinePlayer, String playerName) {
+        UUID targetUuid = targetPlayer != null ? targetPlayer.getUniqueId() : offlinePlayer.getUniqueId();
+        
+        // 如果玩家在线，直接操作数据
+        if (targetPlayer != null) {
+            PlayerCurseData data = playerDataManager.getData(targetPlayer);
+            if (!data.isNarehate()) {
+                sender.sendMessage("§8[§5AbyssCurse§8] §e玩家 §7" + targetPlayer.getName() + " §e不是生骸！");
+                return true;
+            }
+            
+            data.setNarehate(false);
+            data.setNarehateType(null);
+            
+            // 从豁免者列表移除
+            regionManager.removeExemptPlayer(targetUuid);
+            
+            // 异步保存数据
+            playerDataManager.savePlayerDataAsync(targetPlayer);
+            
+            sender.sendMessage("§8[§5AbyssCurse§8] §a已移除玩家 §e" + targetPlayer.getName() + " §a的生骸状态！");
+            
+            if (targetPlayer.isOnline()) {
+                targetPlayer.sendMessage("§8[§5AbyssCurse§8] §c你的生骸状态已被移除！");
+            }
+        } else {
+            // 玩家离线，需要加载数据
+            playerDataManager.loadPlayerDataAsync(offlinePlayer.getUniqueId(), (data) -> {
+                if (data == null || !data.isNarehate()) {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §e玩家 §7" + playerName + " §e不是生骸！");
+                    return;
+                }
+                
+                data.setNarehate(false);
+                data.setNarehateType(null);
+                
+                // 从豁免者列表移除
+                regionManager.removeExemptPlayer(targetUuid);
+                
+                // 保存数据
+                playerDataManager.savePlayerDataAsync(offlinePlayer.getUniqueId(), data);
+                
+                sender.sendMessage("§8[§5AbyssCurse§8] §a已移除玩家 §e" + playerName + " §a的生骸状态！");
+            });
+        }
+        
+        return true;
+    }
+
+    /**
+     * 检查玩家的生骸状态
+     */
+    private boolean handleCheckNarehate(CommandSender sender, Player targetPlayer, OfflinePlayer offlinePlayer, String playerName) {
+        // 如果玩家在线，直接检查数据
+        if (targetPlayer != null) {
+            PlayerCurseData data = playerDataManager.getData(targetPlayer);
+            sender.sendMessage("§8[§5AbyssCurse§8] §7========== 生骸状态 ==========");
+            sender.sendMessage("§8[§5AbyssCurse§8] §7玩家: §e" + targetPlayer.getName());
+            sender.sendMessage("§8[§5AbyssCurse§8] §7是否为生骸: §e" + (data.isNarehate() ? "是" : "否"));
+            if (data.isNarehate() && data.getNarehateType() != null) {
+                sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + data.getNarehateType().name());
+            }
+            sender.sendMessage("§8[§5AbyssCurse§8] §7==============================");
+        } else {
+            // 玩家离线，需要加载数据
+            playerDataManager.loadPlayerDataAsync(offlinePlayer.getUniqueId(), (data) -> {
+                sender.sendMessage("§8[§5AbyssCurse§8] §7========== 生骸状态 ==========");
+                sender.sendMessage("§8[§5AbyssCurse§8] §7玩家: §e" + playerName);
+                if (data != null) {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §7是否为生骸: §e" + (data.isNarehate() ? "是" : "否"));
+                    if (data.isNarehate() && data.getNarehateType() != null) {
+                        sender.sendMessage("§8[§5AbyssCurse§8] §7生骸类型: §e" + data.getNarehateType().name());
+                    }
+                } else {
+                    sender.sendMessage("§8[§5AbyssCurse§8] §7是否为生骸: §e否");
+                }
+                sender.sendMessage("§8[§5AbyssCurse§8] §7==============================");
+            });
+        }
+        
+        return true;
+    }
+
+    /**
      * 发送帮助信息
      */
     private void sendHelp(CommandSender sender) {
@@ -257,6 +494,8 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
         sender.sendMessage("§8[§5AbyssCurse§8] §7  查看插件信息");
         sender.sendMessage("§8[§5AbyssCurse§8] §e/abysscurse debug <on|off|toggle|info|global>");
         sender.sendMessage("§8[§5AbyssCurse§8] §7  调试模式控制");
+        sender.sendMessage("§8[§5AbyssCurse§8] §e/abysscurse narehate <set|remove|check> <player>");
+        sender.sendMessage("§8[§5AbyssCurse§8] §7  管理玩家生骸状态");
         sender.sendMessage("§8[§5AbyssCurse§8] §7==============================");
     }
 
@@ -266,7 +505,7 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
 
         if (args.length == 1) {
             // 主命令补全
-            completions.addAll(Arrays.asList("mode", "reload", "info", "debug"));
+            completions.addAll(Arrays.asList("mode", "reload", "info", "debug", "narehate"));
         } else if (args.length == 2 && args[0].equalsIgnoreCase("debug")) {
             // 调试命令补全
             completions.addAll(Arrays.asList("on", "off", "toggle", "info", "global"));
@@ -291,6 +530,16 @@ public class CommandHandler implements CommandExecutor, TabCompleter {
                     completions.add("5");
                     completions.add("10");
                     completions.add("15");
+                }
+            }
+        } else if (args.length == 2 && args[0].equalsIgnoreCase("narehate")) {
+            // 生骸命令补全
+            completions.addAll(Arrays.asList("set", "remove", "check"));
+        } else if (args.length == 3 && args[0].equalsIgnoreCase("narehate")) {
+            // 生骸命令玩家名补全
+            if (sender.hasPermission("abysscurse.admin")) {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    completions.add(player.getName());
                 }
             }
         }

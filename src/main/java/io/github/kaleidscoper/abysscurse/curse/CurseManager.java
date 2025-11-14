@@ -109,11 +109,6 @@ public class CurseManager {
             effectHandler.applyCurseEffects(player, layer, duration);
         }
         
-        // 第一层特殊处理：显示重度滤镜
-        if (layer == 1 && filterManager != null) {
-            filterManager.setCurseFilter(player, true);
-        }
-        
         // 第三层特殊处理：开始播放随机音效
         if (layer == 3 && soundManager != null) {
             soundManager.startRandomSounds(player);
@@ -237,12 +232,10 @@ public class CurseManager {
     private void handleCurseExpiry(Player player, int layer) {
         PlayerCurseData data = playerDataManager.getData(player);
         
-        // 第六层：检查是否死亡，未死亡则转换为生骸（在第四阶段实现）
+        // 第六层：诅咒过期时的处理（生骸转换由 NarehateManager 在暴露期间每分钟检查）
         if (layer == 6) {
-            if (player.isOnline() && !player.isDead()) {
-                // TODO: 第四阶段实现生骸转换
-                // narehateManager.convertToNarehate(player);
-            }
+            // 生骸转换逻辑已由 NarehateManager 处理
+            // 玩家在暴露于深层诅咒期间每分钟都有概率转换为生骸
         } else if (layer == 7) {
             // 第七层：诅咒结束后未死亡则强制击杀
             if (player.isOnline() && !player.isDead()) {
@@ -253,11 +246,6 @@ public class CurseManager {
         // 清除诅咒效果
         if (effectHandler != null) {
             effectHandler.removeCurseEffects(player);
-        }
-        
-        // 清除第一层滤镜
-        if (layer == 1 && filterManager != null) {
-            filterManager.setCurseFilter(player, false);
         }
         
         // 停止第三层随机音效

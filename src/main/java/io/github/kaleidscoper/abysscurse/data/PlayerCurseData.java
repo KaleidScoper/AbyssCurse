@@ -37,6 +37,9 @@ public class PlayerCurseData {
     // 生骸类型（LUCKY/SAD，枚举）
     private NarehateType narehateType;
     
+    // 暴露在深层诅咒（第六层及以下）中的开始时间（时间戳，0表示未暴露）
+    private long deepCurseExposureStartTime;
+    
     // 累计上升过期时间（20分钟 = 20 * 60 * 1000 毫秒）
     private static final long EXPIRE_TIME = 20 * 60 * 1000;
 
@@ -51,6 +54,7 @@ public class PlayerCurseData {
         this.curseArm = 0;
         this.isNarehate = false;
         this.narehateType = null;
+        this.deepCurseExposureStartTime = 0;
     }
 
     /**
@@ -258,6 +262,20 @@ public class PlayerCurseData {
      */
     public void setNarehateType(NarehateType narehateType) {
         this.narehateType = narehateType;
+    }
+
+    /**
+     * 获取暴露在深层诅咒中的开始时间
+     */
+    public long getDeepCurseExposureStartTime() {
+        return deepCurseExposureStartTime;
+    }
+
+    /**
+     * 设置暴露在深层诅咒中的开始时间
+     */
+    public void setDeepCurseExposureStartTime(long deepCurseExposureStartTime) {
+        this.deepCurseExposureStartTime = deepCurseExposureStartTime;
     }
 
     /**
