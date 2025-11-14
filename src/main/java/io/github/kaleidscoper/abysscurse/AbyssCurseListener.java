@@ -292,7 +292,7 @@ public class AbyssCurseListener implements Listener {
                 // 更新 lastY
                 data.setLastY(currentY);
             }
-        }.runTaskTimer(plugin, 0, 20); // 每20tick（1秒）执行一次
+        }.runTaskTimer(plugin, 0, 10); // 每10tick（0.5秒）执行一次
         
         playerCheckTasks.put(uuid, task);
     }
