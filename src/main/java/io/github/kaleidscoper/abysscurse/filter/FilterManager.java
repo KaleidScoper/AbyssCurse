@@ -1,5 +1,6 @@
 package io.github.kaleidscoper.abysscurse.filter;
 
+import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import net.kyori.adventure.text.Component;
@@ -20,6 +21,7 @@ import java.util.UUID;
 public class FilterManager {
     private final JavaPlugin plugin;
     private final PlayerDataManager playerDataManager;
+    private final ConfigManager configManager;
     
     // 存储玩家是否处于第一层诅咒状态
     private final Map<UUID, Boolean> curseFilterState = new HashMap<>();
@@ -30,9 +32,10 @@ public class FilterManager {
     // 定期更新任务
     private BukkitTask updateTask;
     
-    public FilterManager(JavaPlugin plugin, PlayerDataManager playerDataManager) {
+    public FilterManager(JavaPlugin plugin, PlayerDataManager playerDataManager, ConfigManager configManager) {
         this.plugin = plugin;
         this.playerDataManager = playerDataManager;
+        this.configManager = configManager;
         startUpdateTask();
     }
     
@@ -46,16 +49,16 @@ public class FilterManager {
         
         UUID uuid = player.getUniqueId();
         boolean isCurseFilter = curseFilterState.getOrDefault(uuid, false);
-        int intensity = toIntensity(totalRise);
+        double threshold = configManager.getRiseThreshold();
         
-        // 第一层诅咒状态：强制显示"累计上升高度2"的文字
+        // 第一层诅咒状态：强制显示阈值的滤镜和文字
         if (isCurseFilter) {
-            updateFilterWithColor(player, 2); // 使用累计上升高度2的滤镜和文字
+            updateFilterWithColor(player, totalRise, threshold); // 使用阈值的滤镜和文字
             return;
         }
         
         // 正常状态：根据累计上升高度显示
-        updateFilterWithColor(player, intensity);
+        updateFilterWithColor(player, totalRise, threshold);
     }
     
     /**
@@ -63,78 +66,70 @@ public class FilterManager {
      */
     public void setCurseFilter(Player player, boolean enabled) {
         UUID uuid = player.getUniqueId();
+        double threshold = configManager.getRiseThreshold();
         if (enabled) {
             curseFilterState.put(uuid, true);
-            updateFilterWithColor(player, 2); // 显示重度滤镜
-            lastDisplayedRise.put(uuid, 2); // 更新记录
+            double totalRise = playerDataManager.getData(player).getTotalRise();
+            updateFilterWithColor(player, totalRise, threshold); // 显示重度滤镜
+            lastDisplayedRise.put(uuid, toIntensity(totalRise, threshold)); // 更新记录
         } else {
             curseFilterState.remove(uuid);
             // 恢复正常的累计上升高度滤镜
             double totalRise = playerDataManager.getData(player).getTotalRise();
             updateFilter(player, totalRise);
-            lastDisplayedRise.put(uuid, toIntensity(totalRise)); // 更新记录
+            lastDisplayedRise.put(uuid, toIntensity(totalRise, threshold)); // 更新记录
         }
     }
     
     /**
      * 内部方法：根据强度更新滤镜
      */
-    private void updateFilterWithColor(Player player, int intensity) {
+    private void updateFilterWithColor(Player player, double totalRise, double threshold) {
+        int intensity = toIntensity(totalRise, threshold);
         TextColor filterColor = getFilterColor(intensity);
         
-        // 第一层诅咒状态：显示"累计上升高度2"的文字
+        // 第一层诅咒状态：显示阈值的文字
         boolean isCurseFilter = curseFilterState.getOrDefault(player.getUniqueId(), false);
         if (isCurseFilter) {
-            // 显示文字：累计上升高度2
+            // 显示文字：累计上升高度（阈值）
+            String displayText = String.format("累计上升高度%.1f", threshold);
             Component filterText = Component.text()
-                .content("累计上升高度2")
+                .content(displayText)
                 .color(filterColor)
                 .build();
             player.sendActionBar(filterText);
             return;
         }
         
-        // 正常状态：根据累计上升高度显示文字
-        if (intensity <= 0) {
+        // 正常状态：始终显示实际的累计上升高度值
+        if (totalRise <= 0) {
             Component filterText = Component.text()
                 .content("累计上升高度0")
                 .color(filterColor)
                 .build();
             player.sendActionBar(filterText);
-        } else if (intensity == 1) {
-            Component filterText = Component.text()
-                .content("累计上升高度1")
-                .color(filterColor)
-                .build();
-            player.sendActionBar(filterText);
-        } else if (intensity >= 2) {
-            Component filterText = Component.text()
-                .content("累计上升高度2")
-                .color(filterColor)
-                .build();
-            player.sendActionBar(filterText);
         } else {
-            // 不显示滤镜
-            player.sendActionBar(Component.empty());
+            // 显示实际值
+            String displayText = String.format("累计上升高度%.1f", totalRise);
+            Component filterText = Component.text()
+                .content(displayText)
+                .color(filterColor)
+                .build();
+            player.sendActionBar(filterText);
         }
     }
     
     /**
      * 获取滤镜颜色
+     * 0时为灰色，非0时统一为红色
      */
-    private TextColor getFilterColor(int totalRise) {
-        if (totalRise <= 0) {
+    private TextColor getFilterColor(int intensity) {
+        if (intensity <= 0) {
             // 灰色：表示已清空
             return TextColor.color(160, 160, 160);
         }
-        if (totalRise == 1) {
-            // 轻微红色：RGB(255, 100, 100)
-            return TextColor.color(255, 100, 100);
-        } else if (totalRise >= 2) {
-            // 重度红色：RGB(200, 0, 0)
-            return TextColor.color(200, 0, 0);
-        }
-        return TextColor.color(0, 0, 0); // 黑色（不显示）
+        // 非0时统一为红色：RGB(200, 0, 0)
+        return TextColor.color(200, 0, 0);
     }
     
     /**
@@ -156,7 +151,8 @@ public class FilterManager {
                     }
                     
                     double totalRise = data.getTotalRise();
-                    int intensity = toIntensity(totalRise);
+                    double threshold = configManager.getRiseThreshold();
+                    int intensity = toIntensity(totalRise, threshold);
                     UUID uuid = player.getUniqueId();
                     
                     // 只在累计上升高度变化或处于诅咒状态时才更新
@@ -193,9 +189,12 @@ public class FilterManager {
 
     /**
      * 将累计上升高度转换为滤镜显示强度（0/1/2）
+     * 0: 无上升或已清空
+     * 1: 上升高度在 1.0 到阈值之间
+     * 2: 上升高度达到或超过阈值
      */
-    private int toIntensity(double totalRise) {
-        if (totalRise >= 2.0) {
+    private int toIntensity(double totalRise, double threshold) {
+        if (totalRise >= threshold) {
             return 2;
         }
         if (totalRise >= 1.0) {

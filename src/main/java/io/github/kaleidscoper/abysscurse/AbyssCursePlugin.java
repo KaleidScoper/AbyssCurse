@@ -65,7 +65,7 @@ public final class AbyssCursePlugin extends JavaPlugin {
             getLogger().info("效果管理器已初始化");
             
             // 初始化滤镜管理器（需要在 CurseManager 之前创建）
-            filterManager = new FilterManager(this, playerDataManager);
+            filterManager = new FilterManager(this, playerDataManager, configManager);
             getLogger().info("滤镜管理器已初始化");
             
             // 初始化音效管理器（需要在 CurseManager 之前创建）

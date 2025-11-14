@@ -22,3 +22,8 @@ curse-mode: abyss-curse
 debug:
   enabled: false
 
+# 上升积累阈值（单位：格）
+# 当玩家累计上升高度达到此阈值时，将触发诅咒
+# 默认值为 2.0 格
+rise-threshold: 2.0
+

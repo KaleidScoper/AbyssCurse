@@ -82,6 +82,11 @@ public class ConfigManager {
         if (!config.contains("debug.enabled")) {
             config.set("debug.enabled", false);
         }
+        
+        // 上升积累阈值配置
+        if (!config.contains("rise-threshold")) {
+            config.set("rise-threshold", 2.0);
+        }
     }
 
     /**
@@ -197,6 +202,22 @@ public class ConfigManager {
      */
     public void setDebugEnabled(boolean enabled) {
         config.set("debug.enabled", enabled);
+        saveConfig();
+    }
+    
+    /**
+     * 获取上升积累阈值（单位：格）
+     * 当玩家累计上升高度达到此阈值时，将触发诅咒
+     */
+    public double getRiseThreshold() {
+        return config.getDouble("rise-threshold", 2.0);
+    }
+    
+    /**
+     * 设置上升积累阈值（单位：格）
+     */
+    public void setRiseThreshold(double threshold) {
+        config.set("rise-threshold", threshold);
         saveConfig();
     }
 }

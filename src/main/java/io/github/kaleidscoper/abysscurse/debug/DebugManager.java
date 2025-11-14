@@ -142,9 +142,10 @@ public class DebugManager {
             
             // 累计上升高度
             double totalRise = data.getTotalRise();
+            double threshold = configManager.getRiseThreshold();
             builder.append(Component.text("上升: ", NamedTextColor.GRAY));
             builder.append(Component.text(String.format("%.2f", totalRise), 
-                totalRise >= 2.0 ? NamedTextColor.RED : NamedTextColor.YELLOW));
+                totalRise >= threshold ? NamedTextColor.RED : NamedTextColor.YELLOW));
             
             // 安全高度
             builder.append(Component.text(" | ", NamedTextColor.GRAY));

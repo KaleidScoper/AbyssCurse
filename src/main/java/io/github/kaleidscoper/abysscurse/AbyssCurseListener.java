@@ -1,5 +1,6 @@
 package io.github.kaleidscoper.abysscurse;
 
+import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.curse.CurseManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
@@ -33,6 +34,7 @@ public class AbyssCurseListener implements Listener {
     private final RegionManager regionManager;
     private final ModeManager modeManager;
     private final CurseManager curseManager;
+    private final ConfigManager configManager;
     
     // 存储每个玩家的定时检查任务（每20tick检查一次Y坐标变化）
     private final Map<UUID, BukkitTask> playerCheckTasks = new HashMap<>();
@@ -43,6 +45,7 @@ public class AbyssCurseListener implements Listener {
         this.regionManager = plugin.getRegionManager();
         this.modeManager = plugin.getModeManager();
         this.curseManager = plugin.getCurseManager();
+        this.configManager = plugin.getConfigManager();
     }
 
     /**
@@ -262,8 +265,9 @@ public class AbyssCurseListener implements Listener {
                         // 获取当前累计上升高度（自动清理过期记录）
                         double totalRise = data.getTotalRise();
                         
-                        // 检查是否达到触发诅咒的阈值（2m）
-                        if (totalRise >= 2.0) {
+                        // 检查是否达到触发诅咒的阈值
+                        double threshold = configManager.getRiseThreshold();
+                        if (totalRise >= threshold) {
                             // 触发诅咒
                             double safeHeight = data.getSafeHeight();
                             curseManager.triggerCurse(player, safeHeight);
