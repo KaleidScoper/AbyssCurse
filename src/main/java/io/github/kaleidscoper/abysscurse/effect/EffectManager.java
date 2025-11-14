@@ -105,65 +105,65 @@ public class EffectManager implements CurseEffectHandler {
         // 根据层级施加对应效果
         switch (layer) {
             case 1: // 第一层：阿比斯之渊
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
                 break;
             case 2: // 第二层：诱惑之森
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
                 break;
             case 3: // 第三层：大断层
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.DARKNESS, 1, (int)duration, EffectSource.CURSE);
                 break;
             case 4: // 第四层：巨人之杯
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.UNLUCK, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.MINING_FATIGUE, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WEAKNESS, 0, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.DARKNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.UNLUCK, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.MINING_FATIGUE, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WEAKNESS, 1, (int)duration, EffectSource.CURSE);
                 break;
             case 5: // 第五层：亡骸之海
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.UNLUCK, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.MINING_FATIGUE, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WEAKNESS, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 0, (int)duration, EffectSource.CURSE); // 失明（叠加）
-                addEffect(player, PotionEffectType.POISON, 2, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.DARKNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.UNLUCK, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.MINING_FATIGUE, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WEAKNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE); // 失明
+                addEffect(player, PotionEffectType.POISON, 1, (int)duration, EffectSource.CURSE);
                 // 注意：禁止右键、游戏静音、聊天栏不可见等效果在事件监听器中处理
                 break;
             case 6: // 第六层：来无还之都
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.DARKNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.UNLUCK, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.MINING_FATIGUE, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WEAKNESS, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.UNLUCK, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.MINING_FATIGUE, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WEAKNESS, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.POISON, 2, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WITHER, 2, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.POISON, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WITHER, 1, (int)duration, EffectSource.CURSE);
                 // 注意：寄生效果在第四阶段实现
                 break;
             case 7: // 第七层：最终极之涡
-                addEffect(player, PotionEffectType.NAUSEA, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.HUNGER, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.SLOWNESS, 6, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.NAUSEA, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.HUNGER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.SLOWNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.DARKNESS, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.UNLUCK, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.MINING_FATIGUE, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WEAKNESS, 1, (int)duration, EffectSource.CURSE);
                 addEffect(player, PotionEffectType.BLINDNESS, 1, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.UNLUCK, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.MINING_FATIGUE, 3, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WEAKNESS, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.BLINDNESS, 0, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.POISON, 2, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.WITHER, 2, (int)duration, EffectSource.CURSE);
-                addEffect(player, PotionEffectType.INSTANT_DAMAGE, 2, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.POISON, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.WITHER, 1, (int)duration, EffectSource.CURSE);
+                addEffect(player, PotionEffectType.INSTANT_DAMAGE, 1, (int)duration, EffectSource.CURSE);
                 break;
         }
     }
@@ -213,7 +213,9 @@ public class EffectManager implements CurseEffectHandler {
         
         // 判断是否应该添加/覆盖
         boolean shouldApply = false;
-        if (existing == null) {
+        boolean playerCurrentlyHasEffect = player.hasPotionEffect(type);
+        if (existing == null || !playerCurrentlyHasEffect) {
+            // 玩家当前没有该效果（可能被牛奶等方式移除），应重新施加
             shouldApply = true;
         } else {
             if (shouldOverride(existing, newEffect)) {
@@ -304,6 +306,7 @@ public class EffectManager implements CurseEffectHandler {
     
     /**
      * 刷新玩家效果
+     * 注意：诅咒效果（EffectSource.CURSE）不会被刷新，由 CurseManager 管理
      */
     public void refreshEffects(Player player) {
         if (player == null || !player.isOnline()) {
@@ -321,6 +324,19 @@ public class EffectManager implements CurseEffectHandler {
         
         for (Map.Entry<PotionEffectType, EffectData> entry : effects.entrySet()) {
             EffectData effect = entry.getValue();
+            
+            // 诅咒效果不刷新，由 CurseManager 管理
+            if (effect.source == EffectSource.CURSE) {
+                // 只检查是否过期，不重新应用
+                if (effect.duration > 0) {
+                    long elapsed = now - effect.timestamp;
+                    if (elapsed >= effect.duration * 50) { // duration 是 tick 数
+                        toRemove.add(entry.getKey());
+                    }
+                }
+                continue;
+            }
+            
             // 检查短时效果是否过期
             if (effect.duration > 0) {
                 long elapsed = now - effect.timestamp;

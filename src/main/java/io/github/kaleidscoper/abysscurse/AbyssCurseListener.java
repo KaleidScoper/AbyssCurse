@@ -11,9 +11,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -90,11 +92,78 @@ public class AbyssCurseListener implements Listener {
             task.cancel();
         }
         
+        // 清理滤镜管理器中的玩家数据
+        if (plugin.getFilterManager() != null) {
+            plugin.getFilterManager().cleanupPlayer(uuid);
+        }
+        
         // 保存玩家数据
         playerDataManager.savePlayerData(player);
         
         // 从缓存中移除（可选，为了节省内存）
         // playerDataManager.removePlayerData(uuid);
+    }
+
+    /**
+     * 玩家死亡事件
+     * 清空累计上升记录并重置安全高度
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+        PlayerCurseData data = playerDataManager.getData(player);
+        if (data == null) {
+            return;
+        }
+        
+        // 清空累计上升记录
+        data.clearRiseRecords();
+        
+        // 重置安全高度为死亡位置的高度
+        Location deathLocation = player.getLocation();
+        data.setSafeHeight(deathLocation.getY());
+        data.setLastY(deathLocation.getY());
+        
+        // 清除诅咒效果
+        if (plugin.getEffectManager() != null) {
+            plugin.getEffectManager().removeCurseEffects(player);
+        }
+        
+        // 清除第一层滤镜
+        if (plugin.getFilterManager() != null) {
+            plugin.getFilterManager().setCurseFilter(player, false);
+        }
+        
+        // 停止诅咒检查任务（如果存在）
+        curseManager.stopCurseCheck(player);
+        
+        plugin.getLogger().info("玩家 " + player.getName() + " 死亡，已清空累计上升记录并重置安全高度");
+    }
+
+    /**
+     * 玩家复活事件
+     * 初始化复活后的数据
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        Player player = event.getPlayer();
+        PlayerCurseData data = playerDataManager.getData(player);
+        if (data == null) {
+            return;
+        }
+        
+        // 获取复活位置
+        Location respawnLocation = event.getRespawnLocation();
+        double respawnY = respawnLocation.getY();
+        
+        // 重置安全高度和 lastY 为复活位置的高度
+        data.setSafeHeight(respawnY);
+        data.setLastY(respawnY);
+        
+        // 确保累计上升记录已清空（死亡时应该已清空，但这里再次确保）
+        data.clearRiseRecords();
+        
+        plugin.getLogger().info("玩家 " + player.getName() + " 复活，已重置安全高度为: " + respawnY);
     }
 
     /**
@@ -184,8 +253,15 @@ public class AbyssCurseListener implements Listener {
                 // 处理 Y 坐标变化
                 if (currentY > lastY) {
                     // 上升：计算上升的方块数并记录
-                    int rise = (int) Math.floor(currentY - lastY);
-                    if (rise > 0) {
+                    // 使用 Math.round 而不是 Math.floor，以更准确地计算上升格数
+                    // 例如：上升 1.5 格应该算作 2 格，上升 0.6 格应该算作 1 格
+                    double riseDelta = currentY - lastY;
+                    int rise = (int) Math.round(riseDelta);
+                    
+                    // 如果上升距离很小（小于0.1格），可能是浮点误差，忽略
+                    if (riseDelta < 0.1) {
+                        // 可能是浮点误差，不记录
+                    } else if (rise > 0) {
                         data.addRise(rise);
                         
                         // 获取当前累计上升高度（自动清理过期记录）

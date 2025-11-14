@@ -82,33 +82,11 @@ public class LayerEffectManager {
     
     /**
      * 施加层级效果
+     * 注意：根据最新需求，层级增益效果已移除，只保留 Title 和 BossBar 显示
      */
     private void applyLayerEffects(Player player, int layer) {
-        switch (layer) {
-            case 1: // 第一层：阿比斯之渊 - 生命恢复
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.REGENERATION, 0, -1, EffectManager.EffectSource.LAYER);
-                break;
-            case 2: // 第二层：诱惑之森 - 伤害吸收1
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.ABSORPTION, 1, -1, EffectManager.EffectSource.LAYER);
-                break;
-            case 3: // 第三层：大断层 - 抗性提升
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.RESISTANCE, 0, -1, EffectManager.EffectSource.LAYER);
-                break;
-            case 4: // 第四层：巨人之杯 - 夜视 + 急迫 + 迅捷 + 力量
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.NIGHT_VISION, 0, -1, EffectManager.EffectSource.LAYER);
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.HASTE, 0, -1, EffectManager.EffectSource.LAYER);
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.SPEED, 0, -1, EffectManager.EffectSource.LAYER);
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.STRENGTH, 0, -1, EffectManager.EffectSource.LAYER);
-                break;
-            case 5: // 第五层：亡骸之海 - 无效果
-                break;
-            case 6: // 第六层：来无还之都 - 幸运
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.LUCK, 0, -1, EffectManager.EffectSource.LAYER);
-                break;
-            case 7: // 第七层：最终极之涡 - 缓降
-                effectManager.addEffect(player, org.bukkit.potion.PotionEffectType.SLOW_FALLING, 0, -1, EffectManager.EffectSource.LAYER);
-                break;
-        }
+        // 层级增益效果已移除，不再施加任何药水效果
+        // 只保留 Title 和 BossBar 显示（在 updateLayerEffects 方法中处理）
     }
     
     /**
