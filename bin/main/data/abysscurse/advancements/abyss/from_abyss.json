@@ -45,9 +45,7 @@
   },
   "requirements": [
     [
-      "lucky_narehate"
-    ],
-    [
+      "lucky_narehate",
       "sad_narehate"
     ]
   ]

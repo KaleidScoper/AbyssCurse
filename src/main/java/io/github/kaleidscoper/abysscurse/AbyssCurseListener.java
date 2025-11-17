@@ -13,7 +13,14 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
+import org.bukkit.Material;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerItemConsumeEvent;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -142,7 +149,7 @@ public class AbyssCurseListener implements Listener {
             return;
         }
         
-        // 检查玩家是否死于诅咒（当前诅咒层级 > 0）
+        // 检查玩家是否死于深渊（当前诅咒层级 > 0）
         if (data.getCurrentLayer() > 0) {
             // 设置自定义死亡消息
             Component deathMessage = Component.text(player.getName() + "魂归奈落");
@@ -344,5 +351,157 @@ public class AbyssCurseListener implements Listener {
             return;
         }
         objective.getScore(player.getName()).setScore(layer);
+    }
+    
+    /**
+     * 检查玩家是否在第六层及以下（禁止聊天栏）
+     * 无论是否是生骸或是否在豁免区，都要检查
+     */
+    private boolean isInLayerSixOrBelow(Player player) {
+        Location location = player.getLocation();
+        
+        // 检查是否在 Abyss 区域内
+        if (!regionManager.isInAbyss(location)) {
+            return false;
+        }
+        
+        // 根据当前Y坐标判断层级
+        int currentLayer = configManager.getLayerByHeight(location.getY());
+        
+        // 第六层及以下（layer >= 6）
+        return currentLayer >= 6;
+    }
+    
+    /**
+     * 检查玩家是否在第五层及以下的诅咒持续时间内（禁止右键）
+     */
+    private boolean isUnderCurseLayerFiveOrBelow(Player player) {
+        PlayerCurseData data = playerDataManager.getData(player);
+        if (data == null) {
+            return false;
+        }
+        
+        int currentLayer = data.getCurrentLayer();
+        
+        // 检查是否在第五层及以下的诅咒中
+        if (currentLayer < 5 || currentLayer == 0) {
+            return false;
+        }
+        
+        // 检查诅咒是否还在持续时间内
+        long curseStartTime = data.getCurseStartTime();
+        long curseDuration = data.getCurseDuration();
+        
+        if (curseStartTime == 0 || curseDuration == 0) {
+            return false;
+        }
+        
+        long now = System.currentTimeMillis();
+        // 计算已过时间（毫秒）
+        long elapsedMs = now - curseStartTime;
+        // 转换为 tick（1 tick = 50ms）
+        long elapsedTicks = elapsedMs / 50;
+        
+        // 如果诅咒还在持续时间内，返回 true
+        // 注意：curseDuration 是以 tick 为单位存储的
+        boolean isUnderCurse = elapsedTicks < curseDuration;
+        
+        // 如果诅咒已过期，确保清除状态（与 CurseManager 的逻辑保持一致）
+        if (!isUnderCurse && currentLayer > 0) {
+            // 触发诅咒过期检查（让 CurseManager 处理过期逻辑）
+            curseManager.checkCurseExpiry(player);
+            return false;
+        }
+        
+        return isUnderCurse;
+    }
+    
+    /**
+     * 禁止第六层及以下玩家使用聊天栏（聊天消息）
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerChat(AsyncChatEvent event) {
+        Player player = event.getPlayer();
+        
+        // 检查是否在第六层及以下
+        if (isInLayerSixOrBelow(player)) {
+            event.setCancelled(true);
+            player.sendMessage("§8[§5AbyssCurse§8] §c在第六层及以下，你无法使用聊天栏...");
+        }
+    }
+    
+    /**
+     * 禁止第六层及以下玩家使用聊天栏（命令）
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
+        Player player = event.getPlayer();
+        
+        // 检查是否在第六层及以下
+        if (isInLayerSixOrBelow(player)) {
+            event.setCancelled(true);
+            player.sendMessage("§8[§5AbyssCurse§8] §c在第六层及以下，你无法使用聊天栏...");
+        }
+    }
+    
+    /**
+     * 禁止第五层及以下诅咒中的玩家使用右键
+     * 包括右键点击、右键长按（举盾、使用物品等）
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        
+        // 只处理右键事件
+        Action action = event.getAction();
+        if (action != Action.RIGHT_CLICK_BLOCK && action != Action.RIGHT_CLICK_AIR) {
+            return;
+        }
+        
+        // 检查是否在第五层及以下的诅咒持续时间内
+        if (isUnderCurseLayerFiveOrBelow(player)) {
+            // 检查玩家手持的物品
+            ItemStack item = event.getItem();
+            if (item != null) {
+                Material material = item.getType();
+                
+                // 阻止使用需要右键长按的物品
+                // 盾牌、食物、药水、钓鱼竿、弓、弩、三叉戟、牛奶桶等
+                if (material == Material.SHIELD ||
+                    material.isEdible() ||
+                    material == Material.POTION ||
+                    material == Material.SPLASH_POTION ||
+                    material == Material.LINGERING_POTION ||
+                    material == Material.FISHING_ROD ||
+                    material == Material.BOW ||
+                    material == Material.CROSSBOW ||
+                    material == Material.TRIDENT ||
+                    material == Material.MILK_BUCKET ||
+                    material == Material.HONEY_BOTTLE ||
+                    material == Material.GOAT_HORN) {
+                    event.setCancelled(true);
+                    player.sendMessage("§8[§5AbyssCurse§8] §c在诅咒持续期间，你无法使用右键...");
+                    return;
+                }
+            }
+            
+            // 对于其他右键操作也禁止
+            event.setCancelled(true);
+            player.sendMessage("§8[§5AbyssCurse§8] §c在诅咒持续期间，你无法使用右键...");
+        }
+    }
+    
+    /**
+     * 禁止第五层及以下诅咒中的玩家吃东西
+     */
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerItemConsume(PlayerItemConsumeEvent event) {
+        Player player = event.getPlayer();
+        
+        // 检查是否在第五层及以下的诅咒持续时间内
+        if (isUnderCurseLayerFiveOrBelow(player)) {
+            event.setCancelled(true);
+            player.sendMessage("§8[§5AbyssCurse§8] §c在诅咒持续期间，你无法使用右键...");
+        }
     }
 }
