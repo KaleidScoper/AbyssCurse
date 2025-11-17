@@ -1,5 +1,6 @@
 package io.github.kaleidscoper.abysscurse;
 
+import io.github.kaleidscoper.abysscurse.achievement.AchievementManager;
 import io.github.kaleidscoper.abysscurse.command.CommandHandler;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.curse.CurseManager;
@@ -35,6 +36,7 @@ public final class AbyssCursePlugin extends JavaPlugin {
     private VisualManager visualManager;
     private CommandHandler commandHandler;
     private DebugManager debugManager;
+    private AchievementManager achievementManager;
     
     // 定期自动保存任务
     private BukkitTask autoSaveTask;
@@ -91,6 +93,11 @@ public final class AbyssCursePlugin extends JavaPlugin {
             // 初始化生骸管理器
             narehateManager = new NarehateManager(this, playerDataManager, regionManager);
             getLogger().info("生骸管理器已初始化");
+
+            // 初始化成就管理器
+            achievementManager = new AchievementManager(this);
+            achievementManager.initialize();
+            getLogger().info("成就管理器已初始化");
 
             // 初始化调试管理器
             debugManager = new DebugManager(this, configManager, modeManager, regionManager, playerDataManager);
@@ -158,6 +165,9 @@ public final class AbyssCursePlugin extends JavaPlugin {
         }
         if (debugManager != null) {
             debugManager.stop();
+        }
+        if (achievementManager != null) {
+            achievementManager.shutdown();
         }
 
         // 清理资源
@@ -250,5 +260,12 @@ public final class AbyssCursePlugin extends JavaPlugin {
      */
     public NarehateManager getNarehateManager() {
         return narehateManager;
+    }
+    
+    /**
+     * 获取成就管理器
+     */
+    public AchievementManager getAchievementManager() {
+        return achievementManager;
     }
 }

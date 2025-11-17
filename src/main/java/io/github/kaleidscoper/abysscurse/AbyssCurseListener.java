@@ -1,5 +1,7 @@
 package io.github.kaleidscoper.abysscurse;
 
+import io.github.kaleidscoper.abysscurse.achievement.Achievement;
+import io.github.kaleidscoper.abysscurse.achievement.AchievementManager;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.curse.CurseManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
@@ -73,6 +75,17 @@ public class AbyssCurseListener implements Listener {
         
         // 清空累计上升记录（玩家重新进入游戏时从新的安全高度开始）
         data.clearRiseRecords();
+        
+        // 检查玩家是否已经在abyss区域内，如果是，授予"阿比斯之渊"成就
+        AchievementManager achievementManager = plugin.getAchievementManager();
+        if (achievementManager != null && regionManager.isInAbyss(player.getLocation())) {
+            // 延迟一小段时间确保datapack已加载
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (player.isOnline()) {
+                    achievementManager.grantAchievement(player, Achievement.ABYSS_EDGE);
+                }
+            }, 40L); // 延迟2秒（40tick），确保datapack已加载
+        }
         
         // 如果玩家是生骸，重新应用生骸效果
         if (data.isNarehate() && data.getNarehateType() != null) {
@@ -221,6 +234,12 @@ public class AbyssCurseListener implements Listener {
         if (!wasInAbyss && isInAbyss) {
             // 进入 Abyss 区域
             player.sendMessage("§8[§5AbyssCurse§8] §c你进入了深渊区域...");
+            
+            // 授予"阿比斯之渊"成就（如果玩家还没有）
+            AchievementManager achievementManager = plugin.getAchievementManager();
+            if (achievementManager != null) {
+                achievementManager.grantAchievement(player, Achievement.ABYSS_EDGE);
+            }
         } else if (wasInAbyss && !isInAbyss) {
             // 离开 Abyss 区域
             player.sendMessage("§8[§5AbyssCurse§8] §a你离开了深渊区域");

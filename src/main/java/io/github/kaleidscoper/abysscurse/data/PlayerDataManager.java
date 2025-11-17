@@ -171,14 +171,21 @@ public class PlayerDataManager {
      * 保存所有在线玩家数据（异步）
      */
     public void saveAllPlayerData() {
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            for (UUID uuid : playerDataCache.keySet()) {
-                PlayerCurseData data = playerDataCache.get(uuid);
-                if (data != null) {
-                    savePlayerDataSync(uuid, data);
-                }
+        if (!plugin.isEnabled()) {
+            saveAllPlayerDataSync();
+            return;
+        }
+
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, this::saveAllPlayerDataSync);
+    }
+
+    private void saveAllPlayerDataSync() {
+        for (UUID uuid : playerDataCache.keySet()) {
+            PlayerCurseData data = playerDataCache.get(uuid);
+            if (data != null) {
+                savePlayerDataSync(uuid, data);
             }
-        });
+        }
     }
 
     /**

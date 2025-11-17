@@ -1,0 +1,29 @@
+{
+  "parent": "abysscurse:abyss/unreturned",
+  "display": {
+    "icon": {
+      "id": "minecraft:bedrock"
+    },
+    "title": {
+      "text": "奈落之底"
+    },
+    "description": {
+      "text": "故事不会从这里结束"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "impossible": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "requirements": [
+    [
+      "impossible"
+    ]
+  ]
+}
+
