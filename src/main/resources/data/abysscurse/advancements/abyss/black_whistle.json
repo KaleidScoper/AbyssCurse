@@ -16,13 +16,31 @@
     "hidden": false
   },
   "criteria": {
-    "impossible": {
-      "trigger": "minecraft:impossible"
+    "fourth_layer": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "dimension": "minecraft:overworld",
+        "position": {
+          "y": {
+            "min": 0.0,
+            "max": 40.0
+          }
+        },
+        "player": {
+          "condition": "minecraft:entity_scores",
+          "scores": {
+            "abyss_layer": {
+              "min": 4,
+              "max": 4
+            }
+          }
+        }
+      }
     }
   },
   "requirements": [
     [
-      "impossible"
+      "fourth_layer"
     ]
   ]
 }

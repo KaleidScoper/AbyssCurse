@@ -277,6 +277,7 @@ public class PlayerCurseData {
     public void setDeepCurseExposureStartTime(long deepCurseExposureStartTime) {
         this.deepCurseExposureStartTime = deepCurseExposureStartTime;
     }
+    
 
     /**
      * 生骸类型枚举

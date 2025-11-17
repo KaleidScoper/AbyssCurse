@@ -14,8 +14,14 @@ import io.github.kaleidscoper.abysscurse.mode.ModeManager;
 import io.github.kaleidscoper.abysscurse.region.RegionManager;
 import io.github.kaleidscoper.abysscurse.sound.SoundManager;
 import io.github.kaleidscoper.abysscurse.visual.VisualManager;
+import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
 /**
  * AbyssCurse 插件主类
@@ -37,6 +43,7 @@ public final class AbyssCursePlugin extends JavaPlugin {
     private CommandHandler commandHandler;
     private DebugManager debugManager;
     private AchievementManager achievementManager;
+    private Objective layerObjective;
     
     // 定期自动保存任务
     private BukkitTask autoSaveTask;
@@ -102,6 +109,9 @@ public final class AbyssCursePlugin extends JavaPlugin {
             // 初始化调试管理器
             debugManager = new DebugManager(this, configManager, modeManager, regionManager, playerDataManager);
             getLogger().info("调试管理器已初始化");
+
+            // 初始化层级成就所需的 scoreboard
+            setupLayerObjective();
 
             // 初始化命令处理器
             commandHandler = new CommandHandler(this, modeManager, configManager, debugManager, playerDataManager, regionManager);
@@ -267,5 +277,31 @@ public final class AbyssCursePlugin extends JavaPlugin {
      */
     public AchievementManager getAchievementManager() {
         return achievementManager;
+    }
+
+    /**
+     * 获取层级记分板目标
+     */
+    public Objective getLayerObjective() {
+        return layerObjective;
+    }
+
+    private void setupLayerObjective() {
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        if (manager == null) {
+            getLogger().warning("无法初始化层级记分板，部分成就可能无法触发");
+            return;
+        }
+
+        Scoreboard scoreboard = manager.getMainScoreboard();
+        Objective objective = scoreboard.getObjective("abyss_layer");
+        if (objective == null) {
+            try {
+                objective = scoreboard.registerNewObjective("abyss_layer", Criteria.DUMMY, Component.text("Abyss Layer"));
+            } catch (IllegalArgumentException e) {
+                objective = scoreboard.getObjective("abyss_layer");
+            }
+        }
+        this.layerObjective = objective;
     }
 }

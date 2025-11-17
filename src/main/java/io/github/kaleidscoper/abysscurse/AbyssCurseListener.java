@@ -1,7 +1,5 @@
 package io.github.kaleidscoper.abysscurse;
 
-import io.github.kaleidscoper.abysscurse.achievement.Achievement;
-import io.github.kaleidscoper.abysscurse.achievement.AchievementManager;
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.curse.CurseManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
@@ -22,6 +20,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Objective;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -76,17 +75,6 @@ public class AbyssCurseListener implements Listener {
         // 清空累计上升记录（玩家重新进入游戏时从新的安全高度开始）
         data.clearRiseRecords();
         
-        // 检查玩家是否已经在abyss区域内，如果是，授予"阿比斯之渊"成就
-        AchievementManager achievementManager = plugin.getAchievementManager();
-        if (achievementManager != null && regionManager.isInAbyss(player.getLocation())) {
-            // 延迟一小段时间确保datapack已加载
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                if (player.isOnline()) {
-                    achievementManager.grantAchievement(player, Achievement.ABYSS_EDGE);
-                }
-            }, 40L); // 延迟2秒（40tick），确保datapack已加载
-        }
-        
         // 如果玩家是生骸，重新应用生骸效果
         if (data.isNarehate() && data.getNarehateType() != null) {
             if (plugin.getNarehateManager() != null) {
@@ -104,6 +92,12 @@ public class AbyssCurseListener implements Listener {
         
         // 启动定时检查任务（每20tick检查一次Y坐标变化）
         startPlayerCheckTask(player);
+        
+        // 初始化层级记分
+        int initialLayer = regionManager.isInAbyss(player.getLocation())
+                ? configManager.getLayerByHeight(player.getLocation().getY())
+                : 0;
+        updateLayerScore(player, initialLayer);
     }
 
     /**
@@ -125,6 +119,9 @@ public class AbyssCurseListener implements Listener {
         if (plugin.getFilterManager() != null) {
             plugin.getFilterManager().cleanupPlayer(uuid);
         }
+        
+        // 归零层级记分，防止旧分数保留
+        updateLayerScore(player, 0);
         
         // 保存玩家数据
         playerDataManager.savePlayerData(player);
@@ -234,12 +231,6 @@ public class AbyssCurseListener implements Listener {
         if (!wasInAbyss && isInAbyss) {
             // 进入 Abyss 区域
             player.sendMessage("§8[§5AbyssCurse§8] §c你进入了深渊区域...");
-            
-            // 授予"阿比斯之渊"成就（如果玩家还没有）
-            AchievementManager achievementManager = plugin.getAchievementManager();
-            if (achievementManager != null) {
-                achievementManager.grantAchievement(player, Achievement.ABYSS_EDGE);
-            }
         } else if (wasInAbyss && !isInAbyss) {
             // 离开 Abyss 区域
             player.sendMessage("§8[§5AbyssCurse§8] §a你离开了深渊区域");
@@ -284,6 +275,10 @@ public class AbyssCurseListener implements Listener {
                 Location location = player.getLocation();
                 double currentY = location.getY();
                 double lastY = data.getLastY();
+                
+                // 判定深度层级并同步到 scoreboard（用于 advancement 条件）
+                int depthLayer = regionManager.isInAbyss(location) ? configManager.getLayerByHeight(currentY) : 0;
+                updateLayerScore(player, depthLayer);
                 
                 // 检查玩家是否受诅咒影响
                 if (!regionManager.isAffectedByCurse(location, uuid)) {
@@ -338,5 +333,16 @@ public class AbyssCurseListener implements Listener {
         }.runTaskTimer(plugin, 0, 10); // 每10tick（0.5秒）执行一次
         
         playerCheckTasks.put(uuid, task);
+    }
+    
+    /**
+     * 同步玩家的深度层级到 scoreboard（供 advancement 使用）
+     */
+    private void updateLayerScore(Player player, int layer) {
+        Objective objective = plugin.getLayerObjective();
+        if (objective == null) {
+            return;
+        }
+        objective.getScore(player.getName()).setScore(layer);
     }
 }
