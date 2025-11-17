@@ -1,6 +1,7 @@
 package io.github.kaleidscoper.abysscurse.curse;
 
 import io.github.kaleidscoper.abysscurse.AbyssCursePlugin;
+import io.github.kaleidscoper.abysscurse.achievement.Achievement;
 import io.github.kaleidscoper.abysscurse.data.PlayerCurseData;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
 import io.github.kaleidscoper.abysscurse.effect.EffectManager;
@@ -172,6 +173,14 @@ public class NarehateManager {
         
         // 应用生骸的药水效果
         applyNarehateEffects(player, type);
+        
+        // 授予"来自深渊"成就（作为备用方案，effects_changed触发器应该会自动触发）
+        if (plugin instanceof AbyssCursePlugin) {
+            AbyssCursePlugin abyssPlugin = (AbyssCursePlugin) plugin;
+            if (abyssPlugin.getAchievementManager() != null) {
+                abyssPlugin.getAchievementManager().grantAchievement(player, Achievement.FROM_ABYSS);
+            }
+        }
         
         // 发送消息给玩家
         String typeName = type == PlayerCurseData.NarehateType.LUCKY ? "幸运生骸" : "悲惨生骸";

@@ -16,13 +16,39 @@
     "hidden": false
   },
   "criteria": {
-    "impossible": {
-      "trigger": "minecraft:impossible"
+    "lucky_narehate": {
+      "trigger": "minecraft:effects_changed",
+      "conditions": {
+        "effects": {
+          "minecraft:luck": {},
+          "minecraft:conduit_power": {}
+        }
+      }
+    },
+    "sad_narehate": {
+      "trigger": "minecraft:effects_changed",
+      "conditions": {
+        "effects": {
+          "minecraft:resistance": {
+            "amplifier": {
+              "min": 3
+            }
+          },
+          "minecraft:absorption": {
+            "amplifier": {
+              "min": 3
+            }
+          }
+        }
+      }
     }
   },
   "requirements": [
     [
-      "impossible"
+      "lucky_narehate"
+    ],
+    [
+      "sad_narehate"
     ]
   ]
 }
