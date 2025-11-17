@@ -68,6 +68,43 @@ public class AbyssCurseListener implements Listener {
         // 获取或创建玩家数据
         PlayerCurseData data = playerDataManager.getData(player);
         
+        // 检查并清除过期的诅咒状态（如果玩家在诅咒期间退出，诅咒可能已过期）
+        int currentLayer = data.getCurrentLayer();
+        if (currentLayer > 0) {
+            long curseStartTime = data.getCurseStartTime();
+            long curseDuration = data.getCurseDuration();
+            
+            if (curseStartTime > 0 && curseDuration > 0) {
+                long now = System.currentTimeMillis();
+                long elapsedMs = now - curseStartTime;
+                long elapsedTicks = elapsedMs / 50; // 转换为 tick
+                
+                // 如果诅咒已过期，清除状态
+                if (elapsedTicks >= curseDuration) {
+                    data.setCurrentLayer(0);
+                    data.setCurseStartTime(0);
+                    data.setCurseDuration(0);
+                    data.setCurseArm(0);
+                    
+                    // 清除诅咒效果
+                    if (plugin.getEffectManager() != null) {
+                        plugin.getEffectManager().removeCurseEffects(player);
+                    }
+                    
+                    // 停止第三层随机音效
+                    if (currentLayer == 3 && plugin.getSoundManager() != null) {
+                        plugin.getSoundManager().stopRandomSounds(player);
+                    }
+                }
+            } else {
+                // 诅咒数据不完整，清除状态
+                data.setCurrentLayer(0);
+                data.setCurseStartTime(0);
+                data.setCurseDuration(0);
+                data.setCurseArm(0);
+            }
+        }
+        
         // 重要：将玩家进入游戏时的 Y 坐标存储为初始安全高度
         // 如果数据是新创建的，safeHeight 已经是当前 Y 坐标
         // 如果数据是从文件加载的，保持原有的 safeHeight
@@ -149,11 +186,49 @@ public class AbyssCurseListener implements Listener {
             return;
         }
         
-        // 检查玩家是否死于深渊（当前诅咒层级 > 0）
-        if (data.getCurrentLayer() > 0) {
-            // 设置自定义死亡消息
-            Component deathMessage = Component.text(player.getName() + "魂归奈落");
-            event.deathMessage(deathMessage);
+        // 检查玩家是否死于深渊（当前诅咒层级 > 0 且诅咒仍在持续时间内）
+        int currentLayer = data.getCurrentLayer();
+        boolean diedFromCurse = false;
+        
+        if (currentLayer > 0) {
+            // 验证诅咒是否真的还在持续时间内
+            long curseStartTime = data.getCurseStartTime();
+            long curseDuration = data.getCurseDuration();
+            
+            if (curseStartTime > 0 && curseDuration > 0) {
+                long now = System.currentTimeMillis();
+                long elapsedMs = now - curseStartTime;
+                long elapsedTicks = elapsedMs / 50; // 转换为 tick
+                
+                // 只有在诅咒还在持续时间内时，才显示"魂归奈落"
+                if (elapsedTicks < curseDuration) {
+                    // 设置自定义死亡消息
+                    Component deathMessage = Component.text(player.getName() + "魂归奈落");
+                    event.deathMessage(deathMessage);
+                    diedFromCurse = true;
+                } else {
+                    // 诅咒已过期，清除状态
+                    data.setCurrentLayer(0);
+                    data.setCurseStartTime(0);
+                    data.setCurseDuration(0);
+                    data.setCurseArm(0);
+                }
+            } else {
+                // 诅咒数据不完整，清除状态
+                data.setCurrentLayer(0);
+                data.setCurseStartTime(0);
+                data.setCurseDuration(0);
+                data.setCurseArm(0);
+            }
+        }
+        
+        // 如果因为诅咒死亡（显示了"魂归奈落"），清除诅咒状态
+        // 这样可以确保玩家复活后，下次死亡时不会错误地显示"魂归奈落"
+        if (diedFromCurse) {
+            data.setCurrentLayer(0);
+            data.setCurseStartTime(0);
+            data.setCurseDuration(0);
+            data.setCurseArm(0);
         }
         
         // 清空累计上升记录
