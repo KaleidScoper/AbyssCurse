@@ -1,5 +1,7 @@
 # AbyssCurse
 
+[English](README_EN.md) | [中文](README.md)
+
 ![欢迎来到深渊](abyss.png)
 
 一个为 Minecraft Paper 服务端添加深渊诅咒机制的 PaperMC 插件，灵感来源于《来自深渊》(Made in Abyss)。玩家在深渊中上升时会触发致命的诅咒效果，带来紧张刺激的生存体验。
