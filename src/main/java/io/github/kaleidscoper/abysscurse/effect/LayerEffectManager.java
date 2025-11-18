@@ -2,6 +2,9 @@ package io.github.kaleidscoper.abysscurse.effect;
 
 import io.github.kaleidscoper.abysscurse.config.ConfigManager;
 import io.github.kaleidscoper.abysscurse.data.PlayerDataManager;
+import io.github.kaleidscoper.abysscurse.mode.ModeManager;
+import io.github.kaleidscoper.abysscurse.mode.PluginMode;
+import io.github.kaleidscoper.abysscurse.region.RegionManager;
 import io.github.kaleidscoper.abysscurse.visual.VisualManager;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -19,16 +22,20 @@ public class LayerEffectManager {
     private final PlayerDataManager playerDataManager;
     private final EffectManager effectManager;
     private final ConfigManager configManager;
+    private final ModeManager modeManager;
+    private final RegionManager regionManager;
     private VisualManager visualManager;
     
     // 定期检查任务
     private BukkitTask checkTask;
     
-    public LayerEffectManager(JavaPlugin plugin, PlayerDataManager playerDataManager, EffectManager effectManager, ConfigManager configManager) {
+    public LayerEffectManager(JavaPlugin plugin, PlayerDataManager playerDataManager, EffectManager effectManager, ConfigManager configManager, ModeManager modeManager, RegionManager regionManager) {
         this.plugin = plugin;
         this.playerDataManager = playerDataManager;
         this.effectManager = effectManager;
         this.configManager = configManager;
+        this.modeManager = modeManager;
+        this.regionManager = regionManager;
         startCheckTask();
     }
     
@@ -42,7 +49,7 @@ public class LayerEffectManager {
     /**
      * 更新玩家层级效果
      * 根据玩家当前高度判断层级并施加对应效果
-     * 注意：只在主世界（NORMAL 环境）生效
+     * 注意：只在主世界（NORMAL 环境）且在abyss区域内生效
      */
     public void updateLayerEffects(Player player) {
         if (player == null || !player.isOnline()) {
@@ -58,6 +65,30 @@ public class LayerEffectManager {
             }
             return;
         }
+        
+        // 检查插件模式
+        PluginMode mode = modeManager.getCurrentMode();
+        
+        // OFF 模式：不显示层级播报
+        if (mode == PluginMode.OFF) {
+            if (visualManager != null) {
+                visualManager.clearLayerDisplay(player);
+            }
+            return;
+        }
+        
+        // ABYSS 模式：只在abyss区域内显示层级播报
+        if (mode == PluginMode.ABYSS) {
+            if (!regionManager.isInAbyss(player.getLocation())) {
+                // 如果不在abyss区域内，清除视觉显示
+                if (visualManager != null) {
+                    visualManager.clearLayerDisplay(player);
+                }
+                return;
+            }
+        }
+        
+        // WORLD 模式：整个主世界都是abyss，继续处理
         
         double y = player.getLocation().getY();
         int layer = getLayerByHeight(y);

@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.github.kaleidscoper.abysscurse' // 改成你自己的包名
-version = '1.1.0'
+version = '1.1.1'
 description = 'abyss paper plugin'
 /*
 java {
