@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.github.kaleidscoper.abysscurse' // 改成你自己的包名
-version = '1.1.1'
+version = '2.0.0'
 description = 'abyss paper plugin'
 /*
 java {
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT' // 依赖Paper API
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT' // 依赖Paper API
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
 }
 

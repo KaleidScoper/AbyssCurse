@@ -321,7 +321,7 @@ public class AbyssCurseListener implements Listener {
 
     /**
      * 启动玩家的定时检查任务
-     * 每20tick（1秒）检查一次玩家的Y坐标变化
+     * 每10tick（0.5秒）检查一次玩家的Y坐标变化
      */
     private void startPlayerCheckTask(Player player) {
         UUID uuid = player.getUniqueId();
