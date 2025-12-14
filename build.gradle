@@ -35,5 +35,21 @@ tasks.test {
 
 jar {
     archiveBaseName.set('AbyssCurse')
+    archiveVersion.set(project.version.toString())
     destinationDirectory.set(file("$rootDir/build/libs"))
+    
+    // 处理重复文件（保留第一个）
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    
+    // 确保包含所有资源文件
+    from(sourceSets.main.resources.srcDirs) {
+        include '**/*.yml'
+        include '**/*.yaml'
+        include '**/*.json'
+    }
+    
+    // 排除开发文件
+    exclude '**/*.md'
+    exclude '**/*.txt'
+    exclude '**/test/**'
 }
