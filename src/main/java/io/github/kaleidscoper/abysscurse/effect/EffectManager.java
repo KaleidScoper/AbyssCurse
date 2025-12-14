@@ -10,19 +10,29 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.*;
 
-/**
- * 效果管理器
- * 负责统一管理所有效果施加，避免效果覆盖
- */
-public class EffectManager implements CurseEffectHandler {
-    private final org.bukkit.plugin.java.JavaPlugin plugin;
-    private final PlayerDataManager playerDataManager;
-    
-    // 存储玩家当前所有效果及其来源
-    private final Map<UUID, Map<PotionEffectType, EffectData>> playerEffects = new HashMap<>();
-    
-    // 定期刷新任务
-    private BukkitTask refreshTask;
+    /**
+     * 效果管理器
+     * 负责统一管理所有效果施加，避免效果覆盖
+     */
+    public class EffectManager implements CurseEffectHandler {
+        private final org.bukkit.plugin.java.JavaPlugin plugin;
+        private final PlayerDataManager playerDataManager;
+        
+        // 存储玩家当前所有效果及其来源
+        private final Map<UUID, Map<PotionEffectType, EffectData>> playerEffects = new HashMap<>();
+        
+        // 定期刷新任务
+        private BukkitTask refreshTask;
+        
+        // 需要持续性的效果类型（不能频繁重置，否则无法正常生效）
+        // 这些效果在刷新时，如果玩家已有该效果且剩余时间足够，就不重新应用
+        private static final Set<PotionEffectType> PERSISTENT_EFFECTS = new HashSet<>(Arrays.asList(
+            PotionEffectType.REGENERATION  // 生命恢复：每25-50 tick恢复一次，频繁重置会导致无法恢复
+            // 可以根据需要添加其他需要持续性的效果
+        ));
+        
+        // 持续性效果的最小剩余时间（tick），低于此值才重新应用
+        private static final int PERSISTENT_EFFECT_MIN_DURATION = 60; // 3秒
     
     public EffectManager(org.bukkit.plugin.java.JavaPlugin plugin, PlayerDataManager playerDataManager) {
         this.plugin = plugin;
@@ -344,11 +354,34 @@ public class EffectManager implements CurseEffectHandler {
                 if (elapsed >= effect.duration * 50) { // duration 是 tick 数
                     toRemove.add(entry.getKey());
                 } else {
+                    // 对于需要持续性的效果，检查玩家当前效果是否还存在且剩余时间足够
+                    if (PERSISTENT_EFFECTS.contains(effect.type)) {
+                        PotionEffect currentEffect = player.getPotionEffect(effect.type);
+                        if (currentEffect != null) {
+                            int remainingTicks = currentEffect.getDuration();
+                            // 如果剩余时间足够，就不重新应用，避免重置计时器
+                            if (remainingTicks > PERSISTENT_EFFECT_MIN_DURATION) {
+                                continue; // 跳过重新应用
+                            }
+                        }
+                    }
                     // 重新应用效果（确保效果持续）
                     applyEffectToPlayer(player, effect);
                 }
             } else {
-                // 永久效果，直接重新应用
+                // 永久效果
+                if (PERSISTENT_EFFECTS.contains(effect.type)) {
+                    // 对于需要持续性的永久效果，检查玩家当前效果是否还存在
+                    PotionEffect currentEffect = player.getPotionEffect(effect.type);
+                    if (currentEffect != null) {
+                        int remainingTicks = currentEffect.getDuration();
+                        // 如果剩余时间足够（永久效果通常是Integer.MAX_VALUE），就不重新应用
+                        if (remainingTicks > PERSISTENT_EFFECT_MIN_DURATION) {
+                            continue; // 跳过重新应用
+                        }
+                    }
+                }
+                // 重新应用效果（确保效果持续）
                 applyEffectToPlayer(player, effect);
             }
         }

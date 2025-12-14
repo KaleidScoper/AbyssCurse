@@ -41,51 +41,65 @@ public class ConfigManager {
         // 加载配置
         config = YamlConfiguration.loadConfiguration(configFile);
         
-        // 设置默认值
-        setDefaults();
+        // 设置默认值（只在缺失时设置）
+        boolean hasNewDefaults = setDefaults();
         
-        // 保存配置（确保新添加的默认值被写入）
-        saveConfig();
+        // 只有在添加了新默认值时才保存配置，避免覆盖用户修改
+        if (hasNewDefaults) {
+            saveConfig();
+            plugin.getLogger().info("已添加缺失的默认配置项");
+        }
         
         plugin.getLogger().info("配置文件已加载");
     }
 
     /**
      * 设置默认配置值
+     * @return 是否添加了新的默认值
      */
-    private void setDefaults() {
+    private boolean setDefaults() {
+        boolean hasNewDefaults = false;
+        
         // 模式配置
         if (!config.contains("mode")) {
             config.set("mode", PluginMode.OFF.name());
+            hasNewDefaults = true;
         }
         
         // Abyss 模式配置
         if (!config.contains("abyss.center.x")) {
             config.set("abyss.center.x", 0);
+            hasNewDefaults = true;
         }
         if (!config.contains("abyss.center.y")) {
             config.set("abyss.center.y", 64);
+            hasNewDefaults = true;
         }
         if (!config.contains("abyss.center.z")) {
             config.set("abyss.center.z", 0);
+            hasNewDefaults = true;
         }
         if (!config.contains("abyss.radius")) {
             config.set("abyss.radius", 5);
+            hasNewDefaults = true;
         }
         
         // 诅咒模式配置
         if (!config.contains("curse-mode")) {
             config.set("curse-mode", "abyss-curse");
+            hasNewDefaults = true;
         }
         
         // 调试配置
         if (!config.contains("debug.enabled")) {
             config.set("debug.enabled", false);
+            hasNewDefaults = true;
         }
         
         // 上升积累阈值配置
         if (!config.contains("rise-threshold")) {
             config.set("rise-threshold", 2.0);
+            hasNewDefaults = true;
         }
         
         // 层级范围配置
@@ -94,11 +108,15 @@ public class ConfigManager {
             String maxKey = "layers." + layer + ".max";
             if (!config.contains(minKey)) {
                 config.set(minKey, getDefaultLayerMin(layer));
+                hasNewDefaults = true;
             }
             if (!config.contains(maxKey)) {
                 config.set(maxKey, getDefaultLayerMax(layer));
+                hasNewDefaults = true;
             }
         }
+        
+        return hasNewDefaults;
     }
 
     /**
